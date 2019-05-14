@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static org.joda.time.format.ISODateTimeFormat.date;
 
 /**
  *
@@ -44,8 +43,10 @@ public class ProyectoArduino {
      * @param args the command line arguments
      */
     static int puerto = 20003;
-    final static long TIEMPO_BUCLE = 30000;
-
+    static long TIEMPO_BUCLE = 30000;
+    
+    private final Date diaInicio = new Date();
+  
     private static FileInputStream serviceAccount;
     private static FirebaseOptions options;
     private static FirebaseDatabase database;
@@ -53,7 +54,7 @@ public class ProyectoArduino {
     private static DateFormat dateFormat;
     private static DateFormat horaFormat;
 
-    public static void main(String[] args) throws FileNotFoundException, IOException {
+    ProyectoArduino() throws FileNotFoundException, IOException {
 
         serviceAccount = new FileInputStream("termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
 
@@ -86,48 +87,7 @@ public class ProyectoArduino {
         }
     }
 
-    /*
-    static class Servidor extends Thread {
-
-        Socket sk;
-        DataInputStream dis;
-        DataOutputStream dos;
-
-        Servidor(Socket sk) {
-            this.sk = sk;
-        }
-
-        @Override
-        public void run() {
-
-            try {
-
-                dis = new DataInputStream(sk.getInputStream());
-                dos = new DataOutputStream(sk.getOutputStream());
-
-                System.out.println("Conectado " + sk.getInetAddress().getHostAddress());
-                do {
-                    System.out.println(dis.readUTF());
-
-                    dos.writeUTF(10000+"");
-                } while (Thread.interrupted());
-
-                //dos.writeUTF("Hola");
-                System.out.println(dis.read());
-                System.out.println(dis.read());
-                System.out.println(dis.read());
-                System.out.println(dis.read());
-                System.out.println(dis.read());
-                System.out.println(dis.read());
-                System.out.println(dis.read());
-                System.out.println(dis.read());
-            } catch (IOException ex) {
-                Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-        }
-    }*/
-    static class Servidor extends Thread {
+    class Servidor extends Thread {
 
         Socket sk;
         DataInputStream dis;
@@ -159,15 +119,22 @@ public class ProyectoArduino {
                             float tempDHT22 = Float.parseFloat(in.readLine());
                             float humedadDHT22 = Float.parseFloat(in.readLine());
                             float velViento = Float.parseFloat(in.readLine());
+                            /*
+                            String temp = in.readLine() + "ºC";
+                            String humedad = in.readLine() + "%";
+                            String presion = in.readLine() + "Pa";
+                            String tempDHT22 = in.readLine() + "ºC";
+                            String humedadDHT22 = in.readLine() + "%";
+                            String velViento = in.readLine() + "ms/rad";*/
 
-                            System.out.println("Temperatura  " + temp + "ºC");
-                            System.out.println("Humedad  " + humedad + "%");
-                            System.out.println("Presión  " + presion + "Pa");
-                            System.out.println("Temperatura DHT22  " + tempDHT22 + "ºC");
-                            System.out.println("Humedad DHT22  " + humedadDHT22 + "%");
-                            System.out.println("Velocidad del viento  " + velViento + "Km/h");
-
-                            HashMap<String, Float> datos = new HashMap<>();
+                            System.out.println("Temperatura  " + temp);
+                            System.out.println("Humedad  " + humedad);
+                            System.out.println("Presión  " + presion);
+                            System.out.println("Temperatura DHT22  " + tempDHT22);
+                            System.out.println("Humedad DHT22  " + humedadDHT22);
+                            System.out.println("Velocidad del viento  " + velViento);
+                            /*
+                            HashMap<String, String> datos = new HashMap<>();
                             datos.put("Temperatura", temp);
                             datos.put("Temperatura DHT22", tempDHT22);
                             datos.put("Humedad", humedad);
@@ -177,7 +144,7 @@ public class ProyectoArduino {
 
                             Date date = new Date();
 
-                           /* for (Map.Entry<String, Float> entry : datos.entrySet()) {
+                            for (Map.Entry<String, String> entry : datos.entrySet()) {
 
                                 CountDownLatch donemm3Lluv = new CountDownLatch(1);
                                 Map<String, Object> dato = new HashMap<>();
@@ -190,20 +157,41 @@ public class ProyectoArduino {
                                     }
                                 });
                                 donemm3Lluv.await();
-                                
-                            }*/
 
+                            }
+                             */
                         }
 
                     } catch (NumberFormatException ex) {
                         //Sensor dañado, llama a un tecnico
                         Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
                     }
+
                     System.out.println("-  -  -  -  -  -  -");
                 } while (!Thread.interrupted());
                 System.out.println("INFO - Hilo cerrado");
             } catch (IOException ex) {
                 Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+
+        class ThreadClasifica extends Thread {
+
+            float temp;
+            float humedad;
+            float presion;
+            float tempDHT22;
+            float humedadDHT22;
+            float velViento;
+
+            @Override
+            public void run() {
+
+            }
+
+            void comparaDatos(float datos[], float porcentaje) {
+                
             }
 
         }
