@@ -12,8 +12,8 @@ const char* ssid = "MiFibra-58CD";
 const char* contra = "itdMY4Xj";
 
 ////Servicio
-#define host "192.168.137.1"
-//#define host "192.168.1.89"
+//#define host "192.168.137.1"
+#define host "192.168.1.91"
 const int port = 20003;
 
 ////Definir los pin de entrada y salida
@@ -47,9 +47,6 @@ long tiempoAntes;
     
     //Configurar WiFi
     WiFi.mode(WIFI_STA);// modo cliente wifi
-    WiFi.begin(ssid,contra);
-
-    Serial.println();
     conectarWiFi();
     
     Serial.println("");
@@ -60,7 +57,7 @@ long tiempoAntes;
     
     //envia un numero para recibir el numero de espera;
     digitalWrite(pinLed, LOW);
-    client.println(1111);
+    client.println("1111");
     delay(5);
     digitalWrite(pinLed, HIGH);
     
@@ -73,52 +70,27 @@ long tiempoAntes;
     //listener del Anemometro
     attachInterrupt(digitalPinToInterrupt(pinAnemometro), interrupcionViento, RISING);
 
-    tiempoEsperado = esperaTiempo + millis();
-    delay(5);
     tiempoAntes = millis();
+    tiempoEsperado = esperaTiempo + tiempoAntes;
     
     Serial.print("Tiempo Actual    " ); Serial.println(tiempoAntes);
     Serial.print("Tiempo a esperar " ); Serial.println(esperaTiempo);
     Serial.print("Resultado Tiempo " ); Serial.println(tiempoEsperado);
   }
 
-  void conectarWiFi(){
-    while(WiFi.status()!= WL_CONNECTED){
-      digitalWrite(pinLed, LOW);
-      delay(500);
-      Serial.print(".");
-      if((millis()%10000) == 0){
-        Serial.println();
-      }
-      digitalWrite(pinLed, HIGH);
-    }
-  }
-
-  void conectarServidor(){
-    while(!client.connect(host,port)){
-      digitalWrite(pinLed, LOW);
-      Serial.println("ERROR - Fallo Conexión Servidor");
-      delay(555);
-      digitalWrite(pinLed, HIGH);
-    }
-    digitalWrite(pinLed, HIGH);
-    Serial.println("INFO - Conectado");
-  
-    delay(5);
-  }
-
   void loop() {
-    if(client.connected() || client.available()){
+    if(client.connected()){
         if(millis() > tiempoEsperado){
-          client.println(0000);
           miraTemBME280();
           miraTemDHT();
           Serial.println();
           Serial.print("Velocidad ms/rad :"); Serial.println(velocidad);
           Serial.println("-  -  -  -  -  -  -  -  -  -  -  -");
           
-          tiempoEsperado = esperaTiempo + millis();
+          client.println("0000");
+          delay(5);
           enviarDatos();
+          tiempoEsperado = esperaTiempo + millis();
           reiniciarVariables();
         }
         /*else{
@@ -127,6 +99,7 @@ long tiempoAntes;
         }*/
     }else{
       Serial.println("ERROR - Servidor caido!");
+      client.stop();
       delay(5555);
       //Conectar con el servido
       conectarServidor();
@@ -136,6 +109,39 @@ long tiempoAntes;
       delay(5555);
       conectarWiFi();
     }
+    
+    delay(5);
+  }
+
+  void conectarWiFi(){
+    long tiempoReintentar = millis() + 30000;
+    WiFi.begin(ssid,contra);
+    while(WiFi.status()!= WL_CONNECTED){
+      if(millis() >= (tiempoReintentar)){
+        Serial.println();
+        WiFi.begin(ssid,contra);
+        tiempoReintentar = millis() + 30000;
+      }
+      digitalWrite(pinLed, LOW);
+      delay(250);
+      Serial.print(".");
+      
+      digitalWrite(pinLed, HIGH);
+      delay(250);
+    }
+  }
+  
+  void conectarServidor(){
+    while(!client.connect(host,port)){
+      digitalWrite(pinLed, LOW);
+      Serial.println("ERROR - Fallo Conexión Servidor");
+      delay(500);
+      avisoLed(50,1);
+    }
+    digitalWrite(pinLed, HIGH);
+    Serial.println("INFO - Conectado");
+  
+    delay(5);
   }
 
   void miraTemDHT(){
@@ -145,6 +151,9 @@ long tiempoAntes;
   
     if (isnan(h) || isnan(t)) {
         Serial.println("ERROR - Fallo sensor DHT22");
+        avisoLed(50,3);
+        h = -100;
+        t = -100;
     }else{
         Serial.println();
         Serial.println("DHT22");
@@ -164,6 +173,7 @@ long tiempoAntes;
 
     if(isnan(temperatura) || isnan(humedad) || isnan(presion)){
       Serial.println("ERROR - Fallo sensor BME280");
+      avisoLed(50,3);
     }else{
       Serial.println();
       Serial.println("BME280");
@@ -184,6 +194,16 @@ long tiempoAntes;
     
   }
 
+  void avisoLed(int tiempo, int parpadeo){
+      digitalWrite(pinLed, HIGH);
+    for(int num = 0 ; num < parpadeo; num++){
+      delay(tiempo);
+      digitalWrite(pinLed, LOW);
+      delay(tiempo);
+      digitalWrite(pinLed, HIGH);
+    }
+  }
+
   void reiniciarVariables(){
     /*
 float temperatura,humedad,presion,altitud;
@@ -193,6 +213,7 @@ float t,h,hif;*/
   }
 
   void enviarDatos(){
+    Serial.println("INFO - Enviar Datos");
     digitalWrite(pinLed, LOW);
     //String UT8
 
@@ -204,7 +225,6 @@ float t,h,hif;*/
     client.println(h);
     //client.println(hif);
     client.println(velocidad);
-    
     /*
      //DataInputStream
     client.println("- - - - - - -- ");
@@ -218,8 +238,6 @@ float t,h,hif;*/
     //String UTF8 and numer Byte
     client.write(12);
     client.write("1");
-    //client.readStringUntil('\r');
-  
-    Serial.println(client.readStringUntil('\r'));*/
+    //client.readStringUntil('\r');*/
     digitalWrite(pinLed, HIGH);
   }

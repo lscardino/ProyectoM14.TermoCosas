@@ -14,7 +14,7 @@ import java.io.IOException;
  */
 public class Controlador {
     public static void main(String[] args) throws IOException {
-        ProyectoArduino.TIEMPO_BUCLE  = 60000;
+        //ProyectoArduino.TIEMPO_BUCLE  = 60000;
         ProyectoArduino arduino = new ProyectoArduino();
     }
 }
