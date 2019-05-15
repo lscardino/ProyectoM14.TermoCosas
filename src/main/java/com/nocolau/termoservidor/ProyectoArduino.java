@@ -259,16 +259,17 @@ public class ProyectoArduino {
             }
 
             boolean recurComparaDatos(int datoFijo, float datos[], float rangoError, int posArray, int minPasa) {
-                if (minPasa >= 2 || posArray >= TIEMPO_DIV_VARIABLE) {
-                    return true;
+                if (posArray >= TIEMPO_DIV_VARIABLE) {
+                    return minPasa >= 2;
                 } else {
                     if (datoFijo == posArray) {
                         return recurComparaDatos(datoFijo, datos, rangoError, posArray + 1, minPasa);
                     } else {
                         if (Math.abs(datos[datoFijo] - datos[posArray]) <= rangoError) {
-                            return recurComparaDatos(datoFijo, datos, rangoError, posArray + 1 , minPasa + 1);
+                            return recurComparaDatos(datoFijo, datos, rangoError, posArray + 1, minPasa + 1);
+                        } else {
+                            return recurComparaDatos(datoFijo, datos, rangoError, posArray + 1, minPasa);
                         }
-                        return false;
                     }
                 }
             }
