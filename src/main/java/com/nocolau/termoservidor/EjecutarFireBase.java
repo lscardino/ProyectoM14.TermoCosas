@@ -39,7 +39,13 @@ import java.util.concurrent.ExecutionException;
  */
 public class EjecutarFireBase {
 
+    static FirebaseDatabase database;
+    static DatabaseReference ref;
+    static CountDownLatch latch;
+
     public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException, ExecutionException {
+
+        //INICIALIZACION MOVIDAS FIREBASE
         FileInputStream serviceAccount = new FileInputStream("termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
 
         FirebaseOptions options = new FirebaseOptions.Builder()
@@ -49,162 +55,147 @@ public class EjecutarFireBase {
 
         FirebaseApp.initializeApp(options);
 
-       
+        database = FirebaseDatabase.getInstance();
+        ref = database.getReference("movidas/chungas");
+        //FIN INICIALIZACION MOVIDAS FIREBASE
+
+        sumarContador();
+        devolverValor();
+        //meterMovidas();
+        MeterMovidasConListener();
+        updateChildren();
+        latch.await();
+
+     
         
+         
+        DateFormat dateFormat = new SimpleDateFormat("MM-dd--HH:mm");
+        DateFormat horaFormat = new SimpleDateFormat("HH:mm");
+        Date date = new Date();
+        System.out.println("FECHA ------" + dateFormat.format(date));
+
+        System.out.println("sss");
+
         
-        
-       final FirebaseDatabase database = FirebaseDatabase.getInstance();
-       DatabaseReference ref = database.getReference("movidas/chungas");
-      
-       CountDownLatch hecho = new CountDownLatch(1);
-       
-       
-       /*ESTO VA FETÉN - Mete movidas
-       DatabaseReference datosRef = ref.child("datiyos");
-       
-       Map<String, Dato> mapaDatos = new HashMap<>();
-       mapaDatos.put("dato1", new Dato(10, 2, 4));
-       mapaDatos.put("Datos 2", new Dato(34, 2, 1));
-       
-       datosRef.setValueAsync(mapaDatos);
-       System.out.println("Done");
-       */
-       
-       //ESTE MODIFICA UN CHILDREN
-       DatabaseReference referencia = ref.child("datiyos");
-       Map<String, Object> update = new HashMap<>();
-       update.put("Datos 2/temp", "tirentiayuno");
-       
-       referencia.updateChildrenAsync(update);
-       System.out.println("Ya de ya");
-       
-                           //hecho.countDown();
-                           //hecho.await();
-       
-       
-       
-       //A VER, AUMENTA EL CONTADOR, PERO POR ALGUNA RAZÓN, NO FUNCIONA
-       //SI NO LLAMAS AL METODO getDataDealgo --- NO SÉ PORQUE!
-       DatabaseReference referenciaComp = ref.child("contador");
-       referenciaComp.runTransaction(new Transaction.Handler() {
+    }
+
+    //LISTA DE METODOS
+    //Podría haberles añadido un parametro para poder establecer al referencia,
+    //pero gñeeee
+    //NOTA SOBRE LOS METODOS
+    //Vale, básicamente, los listeners del fireBase se ejecutan de forma
+    //asyncrona, por lo que hay una posibilidad (siempre) de que la ejecucion 
+    //del main finalice antes de que lso listeners tengan tiemp ode hacer lo suyo
+    //por lo que es menester asegurarse de que el main se espere
+    //Cómo hacemos esto? con un CountDownLatch, que, bueno... leete la documentacion
+    //de la clase, este link lo explica guay https://www.baeldung.com/java-countdown-latch
+    
+    
+    //Suma +1 a un contador existente y si esteF está a "null", lo
+    //inicializa a 0
+    public static void sumarContador() throws InterruptedException {
+        DatabaseReference referenciaComp = ref.child("contador");
+        latch = new CountDownLatch(1);
+
+        referenciaComp.runTransaction(new Transaction.Handler() {
             @Override
             public Transaction.Result doTransaction(MutableData md) {
                 Integer currentValue = md.getValue(Integer.class);
                 System.out.println("Valor actual: " + currentValue);
                 if (currentValue == null) {
                     md.setValue(1);
-                    
                     System.out.println("Valor nulo, inicializado a 1");
-                }else{
+
+                } else {
                     md.setValue(currentValue + 1);
                     System.out.println("Sumado +1");
+
                 }
+
                 return Transaction.success(md);
             }
 
             @Override
             public void onComplete(DatabaseError de, boolean bln, DataSnapshot ds) {
                 System.out.println("Hecho");
+                latch.countDown();
             }
         });
-       
-       
-       hecho.await();
 
-        // Firestore db = FirestoreClient.getFirestore();
-        /*CountDownLatch done = new CountDownLatch(1);
-        HashMap<String, Dato> datos = new HashMap<>();
-        DatabaseReference referencia = ref.child("DatoNuevo");
-        datos.put("primero", new Dato(2, 1, 10));
-        referencia.setValueAsync("eee");
-        done = new CountDownLatch(1);
-         */
- /*        CountDownLatch done = new CountDownLatch(1);
-
-        FirebaseDatabase.getInstance().getReference("Dia").child("27-03/humedad").setValue(15, new DatabaseReference.CompletionListener() {
-            @Override
-            public void onComplete(DatabaseError de, DatabaseReference dr) {
-                done.countDown();
-            }
-        });
-        done.await();
-        
-        
-         */
-        DateFormat dateFormat = new SimpleDateFormat("MM-dd--HH:mm");
-        DateFormat horaFormat = new SimpleDateFormat("HH:mm");
-        Date date = new Date();
-        System.out.println("FECHA ------" + dateFormat.format(date));
-
-        //CountDownLatch donemm3Lluv = new CountDownLatch(1);
-        
-        
-        System.out.println("sss");
-        
-        //System.out.println("Datos -- " + getDataFromFirebase());
-        
-        
-        /*
-        HashMap<String, Integer> atributos = new HashMap<>();
-        atributos.put("Humedad", 20);
-        atributos.put("Temperatura", 12);
-        atributos.put("Presion", 0);
-
-        for (Map.Entry<String, Integer> entry : atributos.entrySet()) {
-
-            CountDownLatch donemm3Lluv = new CountDownLatch(1);
-            Map<String, Object> tempe = new HashMap<>();
-            tempe.put(entry.getKey(), entry.getValue());
-        */
-
-        /*
-        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-            databaseReference.child("DOOMSDAY").setValue(dateFormat.format(date), new DatabaseReference.CompletionListener() {
-                @Override
-                public void onComplete(DatabaseError de, DatabaseReference dr) {
-                    donemm3Lluv.countDown();
-                }
-            });
-            donemm3Lluv.await();
-        }
-*/
+        latch.await();
     }
-    
-    private static String getDataFromFirebase() throws InterruptedException{
-        CountDownLatch hecho = new CountDownLatch(1);
-        StringBuilder sb = new StringBuilder();
-        
-        DatabaseReference dbRef = FirebaseDatabase.getInstance()
-                .getReference();
-        
-        dbRef.child("Dia/05-15").addValueEventListener(new ValueEventListener() {
+
+    //Te devuelve lo que quieras, COMO OBJETO, asi que dile la clase.
+    public static void devolverValor() throws InterruptedException {
+        latch = new CountDownLatch(1);
+        DatabaseReference referenciaComp = ref.child("contador");
+        referenciaComp.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot ds) {
-                if (ds.exists()) {
-                    for (DataSnapshot snap : ds.getChildren()) {
-                        Dato dato = ds.getValue(Dato.class);
-                        sb.append(dato.humedad);
-                    }
-                    hecho.countDown();
-                }else{
-                    sb.append("No eriste");
-                    hecho.countDown();
-                }
-                
-                
+                Integer valor = ds.getValue(Integer.class);
+                System.out.println("Valor del contador: " + valor);
+                latch.countDown();
             }
 
             @Override
             public void onCancelled(DatabaseError de) {
-                sb.append("ERROR");
-                hecho.countDown();
+                System.out.println("Fallo al leer el contador");
+                latch.countDown();
             }
         });
-        hecho.await();
-        return sb.toString();
+        latch.await();
+    }
+
+    //Por mucho que me gustara este metodo, el altch solo va bien cuando hay un onCancelled
+    //Así que no funciona. - si solo se llmase a este...
+    public static void meterMovidas() throws InterruptedException {
+        latch = new CountDownLatch(1);
+        DatabaseReference datosRef = ref.child("datiyos");
+
+        Map<String, Dato> mapaDatos = new HashMap<>();
+        mapaDatos.put("dato11", new Dato(11, 2, 4));
+        mapaDatos.put("Datos 23", new Dato(34, 2, 1));
+
+        //Cambiando esto para que no fuese async, quizas...
+        datosRef.setValueAsync(mapaDatos);
+        //latch.countDown();
+        System.out.println("Done");
+        latch.await();
+    }
+
+    //Mete las movidas que quieras donde quieas
+    public static void MeterMovidasConListener() throws InterruptedException {
+        latch = new CountDownLatch(1);
+        DatabaseReference datosRef = ref.child("datiyos");
+        Map<String, Dato> mapaDatos = new HashMap<>();
+        mapaDatos.put("dato12", new Dato(11, 2, 4));
+        mapaDatos.put("Datos 33", new Dato(34, 2, 1));
+
+        datosRef.setValue(mapaDatos, new DatabaseReference.CompletionListener() {
+            @Override
+            public void onComplete(DatabaseError de, DatabaseReference dr) {
+                System.out.println("metidos bien, phrasing!");
+                latch.countDown();
+            }
+        });
+        latch.await();
+
     }
     
+    
+    public static void updateChildren() throws InterruptedException{
+        latch = new CountDownLatch(1);
+        DatabaseReference referencia = ref.child("datiyos");
+        Map<String, Object> update = new HashMap<>();
+        update.put("Datos 2/temp", "tirentiayuno");
+
+        referencia.updateChildren(update, new DatabaseReference.CompletionListener() {
+            @Override
+            public void onComplete(DatabaseError de, DatabaseReference dr) {
+                System.out.println("Finisima actualizacion");
+                latch.countDown();
+            }
+        });
+      latch.await();
+    }
 }
-
-
-
