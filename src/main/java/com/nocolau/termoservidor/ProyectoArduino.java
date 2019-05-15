@@ -243,7 +243,7 @@ public class ProyectoArduino {
 
                 //Mira los datos en recursivo, si es correcto lo guarda en un array para calcular
                 for (int numeroComparar = 0; numeroComparar < datos.length; numeroComparar++) {
-                    if (recurComparaDatos(numeroComparar, datos, rangoError, 0, 1)) {
+                    if (recurComparaDatos(numeroComparar, datos, 0, rangoError, 1, 2)) {
                         media.add(datos[numeroComparar]);
                     }
                 }
@@ -258,17 +258,17 @@ public class ProyectoArduino {
                 return (sum / count);
             }
 
-            boolean recurComparaDatos(int datoFijo, float datos[], float rangoError, int posArray, int minPasa) {
-                if (posArray >= TIEMPO_DIV_VARIABLE) {
-                    return minPasa >= 2;
+            boolean recurComparaDatos(int datoFijo, float datos[], int posArray, float rangoError, int datosCorrectos, int minPas) {
+                if (posArray >= datos.length) {
+                    return datosCorrectos >= minPas;
                 } else {
                     if (datoFijo == posArray) {
-                        return recurComparaDatos(datoFijo, datos, rangoError, posArray + 1, minPasa);
+                        return recurComparaDatos(datoFijo, datos, posArray + 1, rangoError, datosCorrectos, minPas);
                     } else {
                         if (Math.abs(datos[datoFijo] - datos[posArray]) <= rangoError) {
-                            return recurComparaDatos(datoFijo, datos, rangoError, posArray + 1, minPasa + 1);
+                            return recurComparaDatos(datoFijo, datos, posArray + 1, rangoError, datosCorrectos + 1, minPas);
                         } else {
-                            return recurComparaDatos(datoFijo, datos, rangoError, posArray + 1, minPasa);
+                            return recurComparaDatos(datoFijo, datos, posArray + 1, rangoError, datosCorrectos, minPas);
                         }
                     }
                 }
