@@ -198,4 +198,12 @@ public class EjecutarFireBase {
         });
       latch.await();
     }
+    
+    //Vale, lee de la base de datos los hijos de "Dia/elDiaQueSea/Transporte"
+    //Que basicamente se añaden cuando lso usuarios dicen como han ido al insti
+    //SOLO COMO HAN IDO XIN
+    //ESPERA, esto tiene que ir en el clietne de Android. - es solo para actualizar
+    //datos
+    public void actualizarTransporte(){   
+    }
 }
