@@ -12,10 +12,9 @@ import com.google.api.client.util.DateTime;
  * @author Lorenzo
  */
 public class Dato {
-    DateTime fecha;
-    int temp;
-    int humedad;
-    int velViento;
+    public int temp;
+    public int humedad;
+    public int velViento;
 
     public Dato(int temp, int humedad, int velViento) {
         this.temp = temp;
