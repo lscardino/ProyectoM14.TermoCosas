@@ -7,7 +7,6 @@ package com.nocolau.termoservidor;
 
 import com.nocolau.termoservidor.controlador.ProyectoArduino;
 import com.nocolau.termoservidor.modelo.ConfiguracionServidor;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
