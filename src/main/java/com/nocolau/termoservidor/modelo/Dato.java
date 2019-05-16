@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.nocolau.termoservidor;
+package com.nocolau.termoservidor.modelo;
 
 import com.google.api.client.util.DateTime;
 

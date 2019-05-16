@@ -1,0 +1,185 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package com.nocolau.termoservidor.controlador;
+
+import com.nocolau.termoservidor.modelo.ConfiguracionServidor;
+import com.nocolau.termoservidor.modelo.DatosPaquete;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ *
+ * @author Cho_S
+ */
+public class ProyectoArduino {
+
+    /**
+     * @param args the command line arguments
+     */
+    private int puerto;
+    private long TIEMPO_BUCLE;
+    private int TIEMPO_DIV_VARIABLE;
+
+    private final Date diaInicio = new Date();
+    private static boolean bucleCrearServidor = true;
+    private static boolean bucleServidorEscucha = true;
+
+    ProyectoArduino(ConfiguracionServidor nConfigServidor) {
+        this.puerto = nConfigServidor.getPuerto();
+        this.TIEMPO_BUCLE = nConfigServidor.getTIEMPO_BUCLE();
+        this.TIEMPO_DIV_VARIABLE = nConfigServidor.getTIEMPO_DIV_VARIABLE();
+
+        //Mira si esta el Puerto esta libre.
+        /*Si esta ocupado, hay un posiblidad que sea el mismo programa.
+        Por tanto hacemos que el antiguo cierre sessión y entre el nuevo.
+         */
+        CountDownLatch latchRevocarServidor = new CountDownLatch(1);
+        ThreadOutServidor outServer = new ThreadOutServidor(nConfigServidor, latchRevocarServidor);
+        outServer.start();
+        try {
+            latchRevocarServidor.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        //SERVIDOR
+        try {
+            ServerSocket ssk = new ServerSocket(puerto);
+            ssk.setSoTimeout((int) (TIEMPO_BUCLE));
+            System.out.println(ssk.getLocalSocketAddress().toString());
+            System.out.println(ssk.getInetAddress().getLocalHost());
+
+            while (bucleCrearServidor) {
+                try {
+                    Socket sk = ssk.accept(); //espera una conexión de un cliente
+                    System.out.println("-  -  -  -  -  -  -  -  -  -  -  -  -");
+                    Servidor servidor = new Servidor("HILO_SERVIDOR", sk);
+                    servidor.start();
+                } catch (java.net.SocketTimeoutException exOut) {
+                }
+            }
+            ssk.close();
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    class Servidor extends Thread {
+
+        private Socket sk;
+        private BufferedReader in;
+        private BufferedWriter out;
+
+        private DatosPaquete paqueteDatos;
+
+        private int posNumDatos = 0;
+
+        Servidor(String nombre, Socket sk) {
+            super(nombre);
+            this.sk = sk;
+            paqueteDatos = new DatosPaquete(TIEMPO_DIV_VARIABLE);
+        }
+
+        @Override
+        public void run() {
+            try {
+                in = new BufferedReader(new InputStreamReader(sk.getInputStream()));
+                out = new BufferedWriter(new OutputStreamWriter(sk.getOutputStream()));
+
+                System.out.println("INFO - Conectado " + sk.getInetAddress().getHostAddress());
+                //Lee un caracter en formato byte
+                do {
+                    try {
+
+                        switch (in.readLine()) {
+                            case "1111":
+                                out.write((TIEMPO_BUCLE / TIEMPO_DIV_VARIABLE) + "");
+                                out.flush();
+                                break;
+                            case "0000":
+                                recibirDatos();
+                                break;
+                            case "EXIT":
+                                bucleCrearServidor = false;
+                                bucleServidorEscucha = false;
+                            default:
+                                System.out.println("ERROR - Attack in Server ");
+                                break;
+                        }
+
+                    } catch (NumberFormatException ex) {
+                        //Sensor dañado, llama a un tecnico
+                        Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+                } while (bucleServidorEscucha);
+                System.out.println("INFO - Hilo cerrado");
+            } catch (IOException ex) {
+                Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                try {
+                    sk.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
+        }
+
+        private void recibirDatos() throws IOException, NumberFormatException {
+
+            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.temp, Float.parseFloat(in.readLine()), posNumDatos);
+            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.humedad, Float.parseFloat(in.readLine()), posNumDatos);
+            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.presion, Float.parseFloat(in.readLine()), posNumDatos);
+            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.tempDHT22, Float.parseFloat(in.readLine()), posNumDatos);
+            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.humedadDHT22, Float.parseFloat(in.readLine()), posNumDatos);
+            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.velViento, Float.parseFloat(in.readLine()), posNumDatos);
+
+            System.out.println("-  -  -  -  -  -  -");
+            System.out.println("INFO - datos recibidos (" + (posNumDatos + 1) + "/" + TIEMPO_DIV_VARIABLE + ")");/*
+            System.out.println("Temperatura  " + temp[posNumDatos] + "ºC");
+            System.out.println("Humedad  " + humedad[posNumDatos] + "%");
+            System.out.println("Presión  " + presion[posNumDatos] + "Pa");
+            System.out.println("Temperatura DHT22  " + tempDHT22[posNumDatos] + "ºC");
+            System.out.println("Humedad DHT22  " + humedadDHT22[posNumDatos] + "%");
+            System.out.println("Velocidad del viento  " + velViento[posNumDatos] + "ms/rad");*/
+            posNumDatos++;
+            if (posNumDatos >= TIEMPO_DIV_VARIABLE) {
+                posNumDatos = 0;
+                ThreadClasificaSubeDato clasifica = new ThreadClasificaSubeDato("HILO_CLASIFICAR", paqueteDatos);
+                clasifica.start();
+            }
+        }
+
+    }
+}

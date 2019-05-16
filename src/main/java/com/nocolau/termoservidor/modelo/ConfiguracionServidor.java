@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.nocolau.termoservidor;
+package com.nocolau.termoservidor.modelo;
 
 /**
  *
@@ -15,19 +15,19 @@ public class ConfiguracionServidor {
     private long TIEMPO_BUCLE = 30000;
     private int TIEMPO_DIV_VARIABLE = 3;
 
-    ConfiguracionServidor() {
+    public ConfiguracionServidor() {
     }
 
-    ConfiguracionServidor(int nPuerto) {
+    public ConfiguracionServidor(int nPuerto) {
         this.puerto = nPuerto;
     }
 
-    ConfiguracionServidor(long nTiempoBucle, int nTiempoDiv) {
+    public ConfiguracionServidor(long nTiempoBucle, int nTiempoDiv) {
         this.TIEMPO_BUCLE = nTiempoBucle;
         this.TIEMPO_DIV_VARIABLE = nTiempoDiv;
     }
 
-    ConfiguracionServidor(int nPuerto, long nTiempoBucle, int nTiempoDiv) {
+    public ConfiguracionServidor(int nPuerto, long nTiempoBucle, int nTiempoDiv) {
         this.puerto = nPuerto;
         this.TIEMPO_BUCLE = nTiempoBucle;
         this.TIEMPO_DIV_VARIABLE = nTiempoDiv;

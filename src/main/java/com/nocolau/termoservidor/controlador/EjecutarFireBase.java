@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.nocolau.termoservidor;
+package com.nocolau.termoservidor.controlador;
 
+import com.nocolau.termoservidor.modelo.Dato;
 import com.google.api.client.util.DateTime;
 import com.google.api.core.ApiFuture;
 import com.google.auth.oauth2.GoogleCredentials;
