@@ -44,47 +44,72 @@ public class ProyectoArduino {
     /**
      * @param args the command line arguments
      */
-    private int puerto = 20003;
-    static long TIEMPO_BUCLE = 30000;
-    static int TIEMPO_DIV_VARIABLE = 3;
+    private int puerto;
+    private long TIEMPO_BUCLE;
+    private int TIEMPO_DIV_VARIABLE;
 
     private final Date diaInicio = new Date();
+    private static boolean bucleCrearServidor = true;
+    private static boolean bucleServidorEscucha = true;
 
-    private FileInputStream serviceAccount;
-    private FirebaseOptions options;
-    private FirebaseDatabase database;
-    private DatabaseReference ref;
-    private DateFormat dateFormat;
-    private DateFormat horaFormat;
+    ProyectoArduino(ConfiguracionServidor nConfigServidor) {
+        this.puerto = nConfigServidor.getPuerto();
+        this.TIEMPO_BUCLE = nConfigServidor.getTIEMPO_BUCLE();
+        this.TIEMPO_DIV_VARIABLE = nConfigServidor.getTIEMPO_DIV_VARIABLE();
 
-    ProyectoArduino() throws FileNotFoundException, IOException {
+        //Mira si esta el Puerto esta libre.
+        /*Si esta ocupado, hay un posiblidad que sea el mismo programa.
+        Por tanto hacemos que el antiguo cierre sessión y entre el nuevo.
+         */
+        try {
+            Socket skCheckPort = new Socket("localhost", puerto);
+            System.out.println("INFO - HAY SERVIDOR");
 
-        serviceAccount = new FileInputStream("termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(skCheckPort.getOutputStream()));
+            out.write("EXIT");
+            out.newLine();
+            out.flush();
 
-        options = new FirebaseOptions.Builder()
-                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                .setDatabaseUrl("https://termomovidas.firebaseio.com/")
-                .build();
-
-        FirebaseApp.initializeApp(options);
-
-        database = FirebaseDatabase.getInstance();
-        ref = database.getReference();
-        dateFormat = new SimpleDateFormat("MM-dd");
-        horaFormat = new SimpleDateFormat("HH:mm");
+            System.out.println("INFO - Revocando servidor");
+            boolean servidorNoLibre;
+            do {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                try {
+                    skCheckPort = new Socket("localhost", puerto);
+                    servidorNoLibre = false;
+                } catch (IOException exIntent) {
+                    servidorNoLibre = true;
+                } finally {
+                    if (skCheckPort != null) {
+                        skCheckPort.close();
+                    }
+                }
+            } while (servidorNoLibre);
+        } catch (IOException ex) {
+            //Hay servidor en este puerto
+        }
 
         //SERVIDOR
         try {
             ServerSocket ssk = new ServerSocket(puerto);
+            ssk.setSoTimeout((int) (TIEMPO_BUCLE));
             System.out.println(ssk.getLocalSocketAddress().toString());
             System.out.println(ssk.getInetAddress().getLocalHost());
 
-            while (!Thread.currentThread().isInterrupted()) {
-                System.out.println("-  -  -  -  -  -  -  -  -  -  -  -  -");
-                Socket sk = ssk.accept(); //espera una conexión de un cliente
-                Servidor servidor = new Servidor("HILO_SERVIDOR", sk);
-                servidor.start();
+            while (bucleCrearServidor) {
+                try {
+                    Socket sk = ssk.accept(); //espera una conexión de un cliente
+                    System.out.println("-  -  -  -  -  -  -  -  -  -  -  -  -");
+                    Servidor servidor = new Servidor("HILO_SERVIDOR", sk);
+                    servidor.start();
+                } catch (java.net.SocketTimeoutException exOut) {
+                }
             }
+            ssk.close();
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
@@ -129,6 +154,9 @@ public class ProyectoArduino {
                             case "0000":
                                 recibirDatos();
                                 break;
+                            case "EXIT":
+                                bucleCrearServidor = false;
+                                bucleServidorEscucha = false;
                             default:
                                 System.out.println("ERROR - Attack in Server ");
                                 break;
@@ -139,10 +167,16 @@ public class ProyectoArduino {
                         Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
                     }
 
-                } while (!Thread.interrupted());
+                } while (bucleServidorEscucha);
                 System.out.println("INFO - Hilo cerrado");
             } catch (IOException ex) {
                 Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                try {
+                    sk.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
 
         }
@@ -277,42 +311,69 @@ public class ProyectoArduino {
             //Hilo que sube los datos al servidor
             class ThreadSubirDatos extends Thread {
 
+                private FileInputStream serviceAccount;
+                private FirebaseOptions options;
+                private FirebaseDatabase database;
+                private DatabaseReference ref;
+                private DateFormat dateFormat;
+                private DateFormat horaFormat;
+
                 private ThreadSubirDatos(String nombre) {
                     super(nombre);
                 }
 
                 @Override
                 public void run() {
-                    System.out.println("INFO - Subiendo Datos al servidor");
+                    try {
+                        serviceAccount = new FileInputStream("termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
 
-                    HashMap<String, Float> datos = new HashMap<>();
-                    datos.put("Temperatura", _temp);
-                    datos.put("Temperatura DHT22", _tempDHT22);
-                    datos.put("Humedad", _humedad);
-                    datos.put("Humedad DHT22", _humedadDHT22);
-                    datos.put("Presión", _presion);
-                    datos.put("Velocidad viento", _velViento);
+                        options = new FirebaseOptions.Builder()
+                                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                                .setDatabaseUrl("https://termomovidas.firebaseio.com/")
+                                .build();
 
-                    Date date = new Date();
+                        FirebaseApp.initializeApp(options);
 
-                    for (Map.Entry<String, Float> entry : datos.entrySet()) {
+                        database = FirebaseDatabase.getInstance();
+                        ref = database.getReference();
+                        dateFormat = new SimpleDateFormat("MM-dd");
+                        horaFormat = new SimpleDateFormat("HH:mm");
 
-                        CountDownLatch donemm3Lluv = new CountDownLatch(1);
-                        Map<String, Object> dato = new HashMap<>();
-                        dato.put(entry.getKey(), entry.getValue());
+                        System.out.println("INFO - Subiendo Datos al servidor");
 
-                        FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date)).updateChildren(dato, new DatabaseReference.CompletionListener() {
-                            @Override
-                            public void onComplete(DatabaseError de, DatabaseReference dr) {
-                                donemm3Lluv.countDown();
+                        HashMap<String, Float> datos = new HashMap<>();
+                        datos.put("Temperatura", _temp);
+                        datos.put("Temperatura DHT22", _tempDHT22);
+                        datos.put("Humedad", _humedad);
+                        datos.put("Humedad DHT22", _humedadDHT22);
+                        datos.put("Presión", _presion);
+                        datos.put("Velocidad viento", _velViento);
+
+                        Date date = new Date();
+
+                        for (Map.Entry<String, Float> entry : datos.entrySet()) {
+
+                            CountDownLatch donemm3Lluv = new CountDownLatch(1);
+                            Map<String, Object> dato = new HashMap<>();
+                            dato.put(entry.getKey(), entry.getValue());
+
+                            FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date)).updateChildren(dato, new DatabaseReference.CompletionListener() {
+                                @Override
+                                public void onComplete(DatabaseError de, DatabaseReference dr) {
+                                    donemm3Lluv.countDown();
+                                }
+                            });
+                            try {
+                                donemm3Lluv.await();
+                            } catch (InterruptedException ex) {
+                                Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
                             }
-                        });
-                        try {
-                            donemm3Lluv.await();
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
-                        }
 
+                        }
+                    } catch (FileNotFoundException ex) {
+                        Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IOException ex) {
+                        Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
                     }
 
                 }
