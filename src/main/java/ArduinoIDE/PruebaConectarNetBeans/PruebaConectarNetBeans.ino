@@ -13,7 +13,7 @@ const char* contra = "itdMY4Xj";
 
 ////Servicio
 //#define host "192.168.137.1"
-#define host "192.168.1.91"
+#define host "192.168.1.88"
 const int port = 20003;
 
 ////Definir los pin de entrada y salida
@@ -55,27 +55,12 @@ long tiempoAntes;
     //Conectar con el servido
     conectarServidor();
     
-    //envia un numero para recibir el numero de espera;
-    digitalWrite(pinLed, LOW);
-    client.println("1111");
-    delay(5);
-    digitalWrite(pinLed, HIGH);
-    
-    digitalWrite(pinLed, LOW);
-    char skipChar[50] ;
-    client.readStringUntil('\r').toCharArray(skipChar,50);
-    esperaTiempo = atol(skipChar);
-    digitalWrite(pinLed, HIGH);
-
-    //listener del Anemometro
-    attachInterrupt(digitalPinToInterrupt(pinAnemometro), interrupcionViento, RISING);
-
-    tiempoAntes = millis();
-    tiempoEsperado = esperaTiempo + tiempoAntes;
-    
     Serial.print("Tiempo Actual    " ); Serial.println(tiempoAntes);
     Serial.print("Tiempo a esperar " ); Serial.println(esperaTiempo);
     Serial.print("Resultado Tiempo " ); Serial.println(tiempoEsperado);
+    
+    //listener del Anemometro
+    attachInterrupt(digitalPinToInterrupt(pinAnemometro), interrupcionViento, RISING);
   }
 
   void loop() {
@@ -140,8 +125,23 @@ long tiempoAntes;
     }
     digitalWrite(pinLed, HIGH);
     Serial.println("INFO - Conectado");
-  
+
     delay(5);
+    
+    //envia un numero para recibir el numero de espera;
+    digitalWrite(pinLed, LOW);
+    client.println("1111");
+    delay(5);
+    digitalWrite(pinLed, HIGH);
+    
+    digitalWrite(pinLed, LOW);
+    char skipChar[50] ;
+    client.readStringUntil('\r').toCharArray(skipChar,50);
+    esperaTiempo = atol(skipChar);
+    digitalWrite(pinLed, HIGH);
+
+    tiempoAntes = millis();
+    tiempoEsperado = esperaTiempo + tiempoAntes;
   }
 
   void miraTemDHT(){
