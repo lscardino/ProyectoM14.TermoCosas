@@ -5,18 +5,13 @@
  */
 package com.nocolau.termoservidor.controlador;
 
-import com.nocolau.termoservidor.modelo.ConfiguracionServidor;
-import com.nocolau.termoservidor.modelo.DatosPaquete;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.nocolau.termoservidor.modelo.DatosPaquete;
+import com.nocolau.termoservidor.modelo.ConfiguracionServidor;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -24,15 +19,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,11 +38,14 @@ public class ProyectoArduino {
     private long TIEMPO_BUCLE;
     private int TIEMPO_DIV_VARIABLE;
 
+    private FileInputStream serviceAccount;
+    private FirebaseOptions options;
+
     private final Date diaInicio = new Date();
     private static boolean bucleCrearServidor = true;
     private static boolean bucleServidorEscucha = true;
 
-    ProyectoArduino(ConfiguracionServidor nConfigServidor) {
+    public ProyectoArduino(ConfiguracionServidor nConfigServidor) {
         this.puerto = nConfigServidor.getPuerto();
         this.TIEMPO_BUCLE = nConfigServidor.getTIEMPO_BUCLE();
         this.TIEMPO_DIV_VARIABLE = nConfigServidor.getTIEMPO_DIV_VARIABLE();
@@ -63,12 +54,21 @@ public class ProyectoArduino {
         /*Si esta ocupado, hay un posiblidad que sea el mismo programa.
         Por tanto hacemos que el antiguo cierre sessión y entre el nuevo.
          */
-        CountDownLatch latchRevocarServidor = new CountDownLatch(1);
-        ThreadOutServidor outServer = new ThreadOutServidor(nConfigServidor, latchRevocarServidor);
-        outServer.start();
+        paraServidorActual(nConfigServidor);
+
+        //Crear Salida por terminal
+        ThreadControladorTerminal controladorTerminal = new ThreadControladorTerminal("HILO_TERMINAL", nConfigServidor);
+        //controladorTerminal.start();
         try {
-            latchRevocarServidor.await();
-        } catch (InterruptedException ex) {
+            serviceAccount = new FileInputStream("termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            options = new FirebaseOptions.Builder()
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .setDatabaseUrl("https://termomovidas.firebaseio.com/")
+                    .build();
+            FirebaseApp.initializeApp(options);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
             Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
         }
 
@@ -92,6 +92,43 @@ public class ProyectoArduino {
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
+    }
+
+    private void paraServidorActual(ConfiguracionServidor nConfigServidor) {
+        CountDownLatch latchRevocarServidor = new CountDownLatch(1);
+        ThreadOutServidor outServer = new ThreadOutServidor(nConfigServidor, latchRevocarServidor);
+        outServer.start();
+        try {
+            latchRevocarServidor.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    class ThreadControladorTerminal extends Thread {
+
+        private final String STR_SALIR = "EXIT";
+        private ConfiguracionServidor configServidor;
+
+        public ThreadControladorTerminal(String nombre, ConfiguracionServidor nConfigServidor) {
+            super(nombre);
+            this.configServidor = nConfigServidor;
+        }
+
+        @Override
+        public void run() {
+            Scanner sc = new Scanner(System.in);
+            String toReceive;
+
+            do {
+                toReceive = sc.nextLine();
+            } while (!STR_SALIR.equals(toReceive.trim().toUpperCase()) || bucleCrearServidor);
+
+            if (bucleCrearServidor) {
+                paraServidorActual(configServidor);
+            }
+        }
+
     }
 
     class Servidor extends Thread {
@@ -176,7 +213,7 @@ public class ProyectoArduino {
             posNumDatos++;
             if (posNumDatos >= TIEMPO_DIV_VARIABLE) {
                 posNumDatos = 0;
-                ThreadClasificaSubeDato clasifica = new ThreadClasificaSubeDato("HILO_CLASIFICAR", paqueteDatos);
+                ThreadClasificaSubeDato clasifica = new ThreadClasificaSubeDato("HILO_CLASIFICAR_SUBE_DATOS", paqueteDatos);
                 clasifica.start();
             }
         }
