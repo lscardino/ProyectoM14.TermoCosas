@@ -183,17 +183,17 @@ public class ProyectoArduino {
 
         private void recibirDatos() throws IOException, NumberFormatException {
             temp[posNumDatos]
-                    = onlyTwoDecimalPlaces(in.readLine());
+                    = Float.parseFloat(in.readLine());
             humedad[posNumDatos]
-                    = onlyTwoDecimalPlaces(in.readLine());
+                    = Float.parseFloat(in.readLine());
             presion[posNumDatos]
-                    = onlyTwoDecimalPlaces(in.readLine());
+                    = Float.parseFloat(in.readLine());
             tempDHT22[posNumDatos]
-                    = onlyTwoDecimalPlaces(in.readLine());
+                    = Float.parseFloat(in.readLine());
             humedadDHT22[posNumDatos]
-                    = onlyTwoDecimalPlaces(in.readLine());
+                    = Float.parseFloat(in.readLine());
             velViento[posNumDatos]
-                    = onlyTwoDecimalPlaces(in.readLine());
+                    = Float.parseFloat(in.readLine());
             /*
                             String temp = in.readLine() + "ºC";
                             String humedad = in.readLine() + "%";
@@ -202,6 +202,7 @@ public class ProyectoArduino {
                             String humedadDHT22 = in.readLine() + "%";
                             String velViento = in.readLine() + "ms/rad";*/
 
+            System.out.println("-  -  -  -  -  -  -");
             System.out.println("INFO - datos recibidos (" + (posNumDatos + 1) + "/" + TIEMPO_DIV_VARIABLE + ")");
             System.out.println("Temperatura  " + temp[posNumDatos] + "ºC");
             System.out.println("Humedad  " + humedad[posNumDatos] + "%");
@@ -209,30 +210,12 @@ public class ProyectoArduino {
             System.out.println("Temperatura DHT22  " + tempDHT22[posNumDatos] + "ºC");
             System.out.println("Humedad DHT22  " + humedadDHT22[posNumDatos] + "%");
             System.out.println("Velocidad del viento  " + velViento[posNumDatos] + "ms/rad");
-            System.out.println("-  -  -  -  -  -  -");
-
             posNumDatos++;
             if (posNumDatos >= TIEMPO_DIV_VARIABLE) {
                 posNumDatos = 0;
                 ThreadClasifica clasifica = new ThreadClasifica("HILO_CLASIFICAR");
                 clasifica.start();
             }
-        }
-
-        private float onlyTwoDecimalPlaces(String number) {
-            StringBuilder sbFloat = new StringBuilder(number);
-            int start = sbFloat.indexOf(".");
-            if (start < 0) {
-                return new Float(sbFloat.toString());
-            }
-            int end = start + 3;
-            if ((end) > (sbFloat.length() - 1)) {
-                end = sbFloat.length();
-            }
-
-            String twoPlaces = sbFloat.substring(start, end);
-            sbFloat.replace(start, sbFloat.length(), twoPlaces);
-            return new Float(sbFloat.toString());
         }
 
         class ThreadClasifica extends Thread {
@@ -252,13 +235,14 @@ public class ProyectoArduino {
             public void run() {
 
                 // differencia que hay entre un dato y otro
-                _temp = onlyTwoDecimalPlaces(String.valueOf(comparaDatos(temp, 10.0f)));
+                _temp = comparaDatos(temp, 10.0f);
                 _humedad = comparaDatos(humedad, 20.0f);
                 _presion = comparaDatos(presion, 100.0f);
                 _tempDHT22 = comparaDatos(tempDHT22, 10.0f);
                 _humedadDHT22 = comparaDatos(humedadDHT22, 20.0f);
                 _velViento = comparaDatos(velViento, 10000.0f);
 
+                System.out.println("-  -  -  -  -  -  -");
                 System.out.println("INFO - CLASIFICAR DATOS");
                 System.out.println("Temperatura  " + _temp + "ºC");
                 System.out.println("Humedad  " + _humedad + "%");
@@ -266,7 +250,6 @@ public class ProyectoArduino {
                 System.out.println("Temperatura DHT22  " + _tempDHT22 + "ºC");
                 System.out.println("Humedad DHT22  " + _humedadDHT22 + "%");
                 System.out.println("Velocidad del viento  " + _velViento + "ms/rad");
-                System.out.println("-  -  -  -  -  -  -");
 
                 ThreadSubirDatos subirDatos = new ThreadSubirDatos("HILO_SUBIR_BD");
                 subirDatos.start();
@@ -339,15 +322,16 @@ public class ProyectoArduino {
                         dateFormat = new SimpleDateFormat("MM-dd");
                         horaFormat = new SimpleDateFormat("HH:mm");
 
+                        System.out.println("-  -  -  -  -  -  -");
                         System.out.println("INFO - Subiendo Datos al servidor");
 
                         HashMap<String, Float> datos = new HashMap<>();
-                        datos.put("Temperatura", _temp);
-                        datos.put("Temperatura DHT22", _tempDHT22);
-                        datos.put("Humedad", _humedad);
-                        datos.put("Humedad DHT22", _humedadDHT22);
-                        datos.put("Presión", _presion);
-                        datos.put("Velocidad viento", _velViento);
+                        datos.put("Temperatura", onlyTwoDecimalPlaces(String.valueOf(_temp)));
+                        datos.put("Temperatura DHT22", onlyTwoDecimalPlaces(String.valueOf(_tempDHT22)));
+                        datos.put("Humedad", onlyTwoDecimalPlaces(String.valueOf(_humedad)));
+                        datos.put("Humedad DHT22", onlyTwoDecimalPlaces(String.valueOf(_humedadDHT22)));
+                        datos.put("Presión", onlyTwoDecimalPlaces(String.valueOf(_presion)));
+                        datos.put("Velocidad viento", onlyTwoDecimalPlaces(String.valueOf(_velViento)));
 
                         Date date = new Date();
 
@@ -376,6 +360,22 @@ public class ProyectoArduino {
                         Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
                     }
 
+                }
+
+                private float onlyTwoDecimalPlaces(String number) {
+                    StringBuilder sbFloat = new StringBuilder(number);
+                    int start = sbFloat.indexOf(".");
+                    if (start < 0) {
+                        return new Float(sbFloat.toString());
+                    }
+                    int end = start + 3;
+                    if ((end) > (sbFloat.length() - 1)) {
+                        end = sbFloat.length();
+                    }
+
+                    String twoPlaces = sbFloat.substring(start, end);
+                    sbFloat.replace(start, sbFloat.length(), twoPlaces);
+                    return new Float(sbFloat.toString());
                 }
 
             }
