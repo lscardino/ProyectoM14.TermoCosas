@@ -79,6 +79,7 @@ public class CRONTotalTransporte {
         otros = 0;
 
         leerTransportes();
+        //Sobra este await -> Ya esta dentro del metodo al final
         latch.await();
         transformarParaSQL();
         enviarSQL();
