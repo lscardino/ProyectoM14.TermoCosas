@@ -6,15 +6,9 @@
 package com.nocolau.termoservidor.controlador;
 
 import com.nocolau.termoservidor.modelo.DatosPaquete;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -41,8 +35,6 @@ public class ThreadClasificaSubeDato extends Thread {
     private float _velViento;
     private DatosPaquete paqueteDatos;
 
-    private FileInputStream serviceAccount;
-    private FirebaseOptions options;
     private FirebaseDatabase database;
     private DatabaseReference ref;
     private DateFormat dateFormat;
@@ -113,57 +105,43 @@ public class ThreadClasificaSubeDato extends Thread {
     }
 
     private void subirDatosFirebase() {
-        try {
-            serviceAccount = new FileInputStream("termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+        database = FirebaseDatabase.getInstance();
 
-            options = new FirebaseOptions.Builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .setDatabaseUrl("https://termomovidas.firebaseio.com/")
-                    .build();
+        ref = database.getReference();
+        dateFormat = new SimpleDateFormat("MM-dd");
+        horaFormat = new SimpleDateFormat("HH:mm");
 
-            FirebaseApp.initializeApp(options);
+        System.out.println("-  -  -  -  -  -  -");
+        System.out.println("INFO - Subiendo Datos al servidor");
 
-            database = FirebaseDatabase.getInstance();
-            ref = database.getReference();
-            dateFormat = new SimpleDateFormat("MM-dd");
-            horaFormat = new SimpleDateFormat("HH:mm");
+        HashMap<String, Float> datos = new HashMap<>();
+        datos.put("Temperatura", onlyTwoDecimalPlaces(String.valueOf(_temp)));
+        datos.put("Temperatura DHT22", onlyTwoDecimalPlaces(String.valueOf(_tempDHT22)));
+        datos.put("Humedad", onlyTwoDecimalPlaces(String.valueOf(_humedad)));
+        datos.put("Humedad DHT22", onlyTwoDecimalPlaces(String.valueOf(_humedadDHT22)));
+        datos.put("Presión", onlyTwoDecimalPlaces(String.valueOf(_presion)));
+        datos.put("Velocidad viento", onlyTwoDecimalPlaces(String.valueOf(_velViento)));
 
-            System.out.println("-  -  -  -  -  -  -");
-            System.out.println("INFO - Subiendo Datos al servidor");
+        Date date = new Date();
 
-            HashMap<String, Float> datos = new HashMap<>();
-            datos.put("Temperatura", onlyTwoDecimalPlaces(String.valueOf(_temp)));
-            datos.put("Temperatura DHT22", onlyTwoDecimalPlaces(String.valueOf(_tempDHT22)));
-            datos.put("Humedad", onlyTwoDecimalPlaces(String.valueOf(_humedad)));
-            datos.put("Humedad DHT22", onlyTwoDecimalPlaces(String.valueOf(_humedadDHT22)));
-            datos.put("Presión", onlyTwoDecimalPlaces(String.valueOf(_presion)));
-            datos.put("Velocidad viento", onlyTwoDecimalPlaces(String.valueOf(_velViento)));
+        for (Map.Entry<String, Float> entry : datos.entrySet()) {
 
-            Date date = new Date();
+            CountDownLatch donemm3Lluv = new CountDownLatch(1);
+            Map<String, Object> dato = new HashMap<>();
+            dato.put(entry.getKey(), entry.getValue());
 
-            for (Map.Entry<String, Float> entry : datos.entrySet()) {
-
-                CountDownLatch donemm3Lluv = new CountDownLatch(1);
-                Map<String, Object> dato = new HashMap<>();
-                dato.put(entry.getKey(), entry.getValue());
-
-                FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date)).updateChildren(dato, new DatabaseReference.CompletionListener() {
-                    @Override
-                    public void onComplete(DatabaseError de, DatabaseReference dr) {
-                        donemm3Lluv.countDown();
-                    }
-                });
-                try {
-                    donemm3Lluv.await();
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+            FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date)).updateChildren(dato, new DatabaseReference.CompletionListener() {
+                @Override
+                public void onComplete(DatabaseError de, DatabaseReference dr) {
+                    donemm3Lluv.countDown();
                 }
-
+            });
+            try {
+                donemm3Lluv.await();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+
         }
 
     }

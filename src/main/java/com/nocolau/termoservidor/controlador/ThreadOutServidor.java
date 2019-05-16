@@ -10,7 +10,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,7 +23,6 @@ public class ThreadOutServidor extends Thread {
     private ConfiguracionServidor configServidor;
     private CountDownLatch latch;
     private int puerto;
-    private final String STR_SALIR = "EXIT";
 
     ThreadOutServidor(ConfiguracionServidor nConfig, CountDownLatch latchRevocarServidor) {
         this.configServidor = nConfig;
@@ -33,13 +31,6 @@ public class ThreadOutServidor extends Thread {
 
     @Override
     public void run() {
-        Scanner sc = new Scanner(System.in);
-        String toReceive;
-
-        do {
-            toReceive = sc.nextLine();
-            System.out.println(toReceive);
-        } while (!STR_SALIR.equals(toReceive.trim().toUpperCase()));
 
         try {
             puerto = configServidor.getPuerto();
