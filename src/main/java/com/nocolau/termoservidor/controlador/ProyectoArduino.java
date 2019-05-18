@@ -54,7 +54,7 @@ public class ProyectoArduino {
         /*Si esta ocupado, hay un posiblidad que sea el mismo programa.
         Por tanto hacemos que el antiguo cierre sessión y entre el nuevo.
          */
-        paraServidorActual(nConfigServidor);
+        pararServidorActual(nConfigServidor);
 
         //Crear Salida por terminal
         ThreadControladorTerminal controladorTerminal = new ThreadControladorTerminal("HILO_TERMINAL", nConfigServidor);
@@ -94,7 +94,7 @@ public class ProyectoArduino {
         }
     }
 
-    private void paraServidorActual(ConfiguracionServidor nConfigServidor) {
+    private void pararServidorActual(ConfiguracionServidor nConfigServidor) {
         CountDownLatch latchRevocarServidor = new CountDownLatch(1);
         ThreadOutServidor outServer = new ThreadOutServidor(nConfigServidor, latchRevocarServidor);
         outServer.start();
@@ -125,7 +125,7 @@ public class ProyectoArduino {
             } while (!STR_SALIR.equals(toReceive.trim().toUpperCase()) || bucleCrearServidor);
 
             if (bucleCrearServidor) {
-                paraServidorActual(configServidor);
+                pararServidorActual(configServidor);
             }
         }
 
@@ -201,6 +201,8 @@ public class ProyectoArduino {
             paqueteDatos.introducirdatos(DatosPaquete.EnumDato.tempDHT22, Float.parseFloat(in.readLine()), posNumDatos);
             paqueteDatos.introducirdatos(DatosPaquete.EnumDato.humedadDHT22, Float.parseFloat(in.readLine()), posNumDatos);
             paqueteDatos.introducirdatos(DatosPaquete.EnumDato.velViento, Float.parseFloat(in.readLine()), posNumDatos);
+            //paqueteDatos.introducirdatos(DatosPaquete.EnumDato.lluvia, Float.parseFloat(in.readLine()), posNumDatos);
+            //paqueteDatos.introducirdatos(DatosPaquete.EnumDato.polvo, Float.parseFloat(in.readLine()), posNumDatos);
 
             System.out.println("-  -  -  -  -  -  -");
             System.out.println("INFO - datos recibidos (" + (posNumDatos + 1) + "/" + TIEMPO_DIV_VARIABLE + ")");/*
