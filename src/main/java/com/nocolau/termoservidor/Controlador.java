@@ -16,7 +16,9 @@ import java.io.IOException;
 public class Controlador {
 
     public static void main(String[] args) throws IOException {
-        ConfiguracionServidor nConfig = new ConfiguracionServidor();
+        long minutos = 30;
+        int div = 4;
+        ConfiguracionServidor nConfig = new ConfiguracionServidor(minutos * 60000, div);
         try {
             switch (args.length) {
                 case 1:
@@ -34,14 +36,15 @@ public class Controlador {
                 default:
                     throw new NumberFormatException();
             }
+            System.out.println("INFO - Valor introducidos.");
         } catch (NumberFormatException ex) {
             System.out.println("ERROR - Valor incorrecto, el programa usara los valores predeterminados");
-            System.out.println("INFO -        Puerto        -> " + nConfig.getPuerto());
-            System.out.println("INFO -   Tiempo de datos    -> " + nConfig.getTIEMPO_BUCLE());
-            System.out.println("INFO -  Tiempo muestras(" + nConfig.getTIEMPO_DIV_VARIABLE()
-                    + ")  -> " + (nConfig.getTIEMPO_BUCLE() / nConfig.getTIEMPO_DIV_VARIABLE()) + "ms"
-            );
         }
+        System.out.println("INFO -        Puerto        -> " + nConfig.getPuerto());
+        System.out.println("INFO -   Tiempo de datos    -> " + nConfig.getTIEMPO_BUCLE());
+        System.out.println("INFO -  Tiempo muestras(" + nConfig.getTIEMPO_DIV_VARIABLE()
+                + ")  -> " + (nConfig.getTIEMPO_BUCLE() / nConfig.getTIEMPO_DIV_VARIABLE()) + "ms"
+        );
         //new SkOutServidor((nConfig));
         ProyectoArduino arduino = new ProyectoArduino(nConfig);
     }
