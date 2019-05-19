@@ -13,11 +13,17 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.nocolau.termoservidor.modelo.Connexion;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,6 +48,7 @@ public class CRONTotalTransporte {
     static FirebaseDatabase database;
     static DatabaseReference ref;
     static CountDownLatch latch;
+    static Connection conn;
 
     static String dia;
     //TRANSPORTES
@@ -52,10 +59,12 @@ public class CRONTotalTransporte {
     static int apie;
     static int otros;
 
+    static LocalDate queDiaEsHoy;
+
     //De este map se puede estraer mucha más información.
     static HashMap<String, String> listaTotal;
 
-    public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
+    public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException, SQLException {
         FileInputStream serviceAccount = new FileInputStream("termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
 
         FirebaseOptions options = new FirebaseOptions.Builder()
@@ -66,11 +75,15 @@ public class CRONTotalTransporte {
         FirebaseApp.initializeApp(options);
 
         database = FirebaseDatabase.getInstance();
+        conn = Connexion.getConnection();
 
+        queDiaEsHoy = LocalDate.now();
+        if (!fechaRepetida()) {                  
+        iniciarDiaSQL();
         dia = formatearFecha();
         System.out.println("Dia: " + dia);
         //Hay que ver una forma de decirle que dia leer - es facil.
-        ref = database.getReference("Dia/" + dia +"/Transporte");
+        ref = database.getReference("Dia/" + dia + "/Transporte");
 
         bici = 0;
         coche = 0;
@@ -82,7 +95,11 @@ public class CRONTotalTransporte {
         //Sobra este await -> Ya esta dentro del metodo al final
         latch.await();
         transformarParaSQL();
-        enviarSQL();
+        //enviarSQL();
+        }else{
+            System.out.println("Ya hay datos recogidos en esa fecha.");
+        }
+        
 
     }
 
@@ -142,12 +159,55 @@ public class CRONTotalTransporte {
         }
     }
 
-    public static void enviarSQL() {
-        //deberia enviar, pero de momento solo muestra
+    public static void iniciarDiaSQL() throws SQLException {
+        String query = "insert into Dia(dia)"
+                + " values (?)";
+        PreparedStatement sentenciaP = conn.prepareStatement(query);
+        sentenciaP.setObject(1, queDiaEsHoy);
+
+        sentenciaP.execute();
+    }
+
+    public static void enviarSQL() throws SQLException {
+        String query = "insert into transporte"
+                + " values (?,?,?,?,?,?)";
+        PreparedStatement sentenciaP = conn.prepareStatement(query);
+        sentenciaP.setObject(1, queDiaEsHoy);
+        sentenciaP.setInt(2, coche);
+        sentenciaP.setInt(3, apie);
+        sentenciaP.setInt(4, tPublico);
+        sentenciaP.setInt(5, bici);
+        sentenciaP.setInt(6, otros);
+
+        sentenciaP.execute();
+
+        System.out.println("Escrito: ");
+        System.out.println("Dia " + queDiaEsHoy);
         System.out.println("Nº gente coche: " + coche);
         System.out.println("Nº gente bici: " + bici);
         System.out.println("Nº gente transportes pub: " + tPublico);
         System.out.println("Nº gente a pie: " + apie);
         System.out.println("Nº gente otros: " + otros);
+    }
+
+    public static boolean fechaRepetida() throws SQLException {
+        boolean repe = false;
+        System.out.println("Entro a lo de repetido");
+        String query = "select count(*) as resultado from Dia d where d.dia=(?) ";
+        PreparedStatement sentenciaP = conn.prepareStatement(query);
+        sentenciaP.setObject(1, queDiaEsHoy);
+
+        ResultSet rs = sentenciaP.executeQuery();
+        if (rs.next()) {
+           int resultado = rs.getInt(1);
+            if (resultado>0) {
+                repe = true;
+            }
+            System.out.println("Cantidad " + resultado);
+        }else{
+            System.out.println("Errror");
+        }
+        rs.close();
+        return repe;
     }
 }
