@@ -73,7 +73,6 @@ public class CRONPasarDatosSQL {
         parser = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
 
         //fechaRepetida("hola", "pepsicola");
-
         leerTransportes();
         //enviarSQL();
     }
@@ -106,25 +105,27 @@ public class CRONPasarDatosSQL {
                             for (DataSnapshot datos : entrada.getChildren()) {
 
                                 String horaEntrada = datos.getKey();
+
                                 try {
-                                    fechaRepetida("hola", horaEntrada);
-                                } catch (ParseException ex) {
-                                    Logger.getLogger(CRONPasarDatosSQL.class.getName()).log(Level.SEVERE, null, ex);
-                                } catch (SQLException ex) {
+                                    if (!fechaRepetida("Holaaa", horaEntrada)) {
+
+                                        String humedadEntrada = datos.child("Humedad").getValue().toString().substring(0, 5);
+                                        String temperaturaEntrada = datos.child("Temperatura").getValue().toString().substring(0, 5);
+                                        String presionEntrada = datos.child("Presión").getValue().toString().substring(0, 5);
+                                        //Cambiar velocidad viento, ahora está si porque en Firebase es seimpre un 0;
+                                        String velVientoEntrada = datos.child("Velocidad viento").getValue().toString();
+
+                                        System.out.println("Hora: " + horaEntrada);
+                                        System.out.println("Humedad " + humedadEntrada);
+                                        System.out.println("-------------------\n");
+                                        
+                                        guardarSQL("Wolass", horaEntrada, humedadEntrada, temperaturaEntrada, presionEntrada, "jjaano", "otraAqki");
+
+                                    }
+                                } catch (ParseException | SQLException ex) {
                                     Logger.getLogger(CRONPasarDatosSQL.class.getName()).log(Level.SEVERE, null, ex);
                                 }
-                                
-                                
-                                
-                                String humedadEntrada = datos.child("Humedad").getValue().toString().substring(0, 5);
-                                String temperaturaEntrada = datos.child("Temperatura").getValue().toString().substring(0, 5);
-                                String presionEntrada = datos.child("Presión").getValue().toString().substring(0, 5);
-                                //Cambiar velocidad viento, ahora está si porque en Firebase es seimpre un 0;
-                                String velVientoEntrada = datos.child("Velocidad viento").getValue().toString();
 
-                                System.out.println("Hora: " + horaEntrada);
-                                System.out.println("Humedad " + humedadEntrada);
-                                System.out.println("-------------------\n");
                             }
                             //System.out.println("Valor - " +entrada.getValue(String.class));
                         }
@@ -176,8 +177,8 @@ public class CRONPasarDatosSQL {
                 System.out.println("Cantidad " + resultado);
                 //El día existe, miramos si existen las horas.
                 if (resultado > 0) {
-                    horaRepetida(hoyparse, hora);
-                    repetido = true;
+                    repetido = horaRepetida(hoyparse, hora);
+                    System.out.println("Repetido el dia y la hora");
 
                 } else {
                     System.out.println("No existe, lo insertamos");
@@ -198,6 +199,8 @@ public class CRONPasarDatosSQL {
 
     public static boolean horaRepetida(String dia, String hora) throws SQLException {
 
+        boolean repetido = false;
+
         //Otra vez, ponesmo nuesto dia perosnalizado
         String queryFecha = "select count(*) from Datos d where d.dia=(?) and d.hora =(?)";
         PreparedStatement sentenciaP = conn.prepareStatement(queryFecha);
@@ -210,7 +213,9 @@ public class CRONPasarDatosSQL {
 
             if (resultado > 0) {
                 System.out.println("Existe, no creamos nada  y de hecho salimos");
+                repetido = true;
             } else {
+                /*
                 System.out.println("No existe, lo creamos");
                 String insertarEnDatos = "INSERT INTO Datos(dia,hora) VALUES (?,?)";
                 sentenciaP = conn.prepareStatement(insertarEnDatos);
@@ -219,6 +224,8 @@ public class CRONPasarDatosSQL {
                 sentenciaP.execute();
 
                 System.out.println("Hora insertada: " + hora);
+                */
+                repetido = false;
 
             }
 
@@ -226,13 +233,14 @@ public class CRONPasarDatosSQL {
             System.out.println("Ha habido un error tocho!");
         }
 
-        return true;
+        return repetido;
     }
 
     public static void guardarSQL(String dia, String hora, String humedad,
             String temperatura, String presion, String mmlluvia,
             String kmhViento) throws SQLException, ParseException {
 
+        /*
         String input = "20-05-2019";
         Date hoy = new Date();
         LocalDate localHoy = LocalDate.now();
@@ -249,26 +257,31 @@ public class CRONPasarDatosSQL {
         Date parseada = parser.parse(input);
         System.out.println("Parsead:  " + parseada);
 
-        /*Time tiempo = new Time(010101);
+        Time tiempo = new Time(010101);
          System.out.println("Tiempo: " + tiempo);
          System.out.println("Hora parse " + hora);
         SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
         String formattedDate = formatter.format(hora);
          System.out.println("Formateada: " + hora);
         
+         */
+        Date hoy = new Date();
+        System.out.println("Fecha que vamos a insertar " + hoy);
+        String hoyparse = parser.format(hoy);
 
-        
-
-        String query = "insert into h_ejemplo(dia)"
-                + " values (?)";
-        PreparedStatement sentenciaP = conn.prepareStatement(query);
-       
-        sentenciaP.setObject(1, parseada);
-
+        String insertarlosDatos = "INSERT INTO Datos VALUES (?,?,?,?,?,?,?)";
+        PreparedStatement sentenciaP = conn.prepareStatement(insertarlosDatos);
+        sentenciaP.setObject(1, hoyparse);
+        sentenciaP.setString(2, hora);
+        sentenciaP.setFloat(3, Float.parseFloat(humedad));
+        sentenciaP.setFloat(4, Float.parseFloat(temperatura));
+        sentenciaP.setFloat(5, Float.parseFloat(presion));
+        sentenciaP.setFloat(6, (float) 1.33);
+        sentenciaP.setFloat(7, (float) 99.33);
 
         sentenciaP.execute();
 
-        System.out.println("Escrito: ");
-         */
+        System.out.println("Escrito Todo guay");
+
     }
 }
