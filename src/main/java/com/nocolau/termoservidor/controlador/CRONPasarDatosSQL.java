@@ -14,10 +14,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import static com.nocolau.termoservidor.controlador.CRONTotalTransporte.conn;
-import static com.nocolau.termoservidor.controlador.CRONTotalTransporte.database;
-import static com.nocolau.termoservidor.controlador.CRONTotalTransporte.latch;
-import static com.nocolau.termoservidor.controlador.EjecutarFireBase.database;
 import com.nocolau.termoservidor.modelo.Connexion;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -34,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,11 +43,22 @@ public class CRONPasarDatosSQL {
 
     static FirebaseDatabase database;
     static DatabaseReference ref;
+    static DatabaseReference refTransportes;
     static CountDownLatch latch;
     static Connection conn;
     static Query query;
 
-    static String dia;
+    //TRANSPORTES
+    static long totalEntradas;
+    static int bici;
+    static int coche;
+    static int tPublico;
+    static int apie;
+    static int otros;
+
+    static String diaEntrada;
+    //static String dia;
+    static HashMap<String, String> listaTotal;
 
     static SimpleDateFormat parser;
 
@@ -64,17 +72,15 @@ public class CRONPasarDatosSQL {
 
         FirebaseApp.initializeApp(options);
 
-        database = FirebaseDatabase.getInstance();
-        ref = database.getReference("Dia");
-
-        query = ref.orderByKey().limitToFirst(2);
-        conn = Connexion.getConnection();
-
-        parser = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
-
-        //fechaRepetida("hola", "pepsicola");
+        inicilizaVariables();
         leerBDD();
         latch.await();
+
+        refTransportes = database.getReference("Dia/" + diaEntrada + "/Transporte");
+        leerTransportes();
+        latch.await();
+        transformarParaSQL();
+
         //enviarSQL();
     }
 
@@ -103,43 +109,46 @@ public class CRONPasarDatosSQL {
                     public void onDataChange(DataSnapshot ds) {
                         for (DataSnapshot entrada : ds.getChildren()) {
                             try {
-                                String diaEntrada = entrada.getKey();
+                                diaEntrada = entrada.getKey();
                                 fechaRepetida(diaEntrada);
                                 System.out.println("Cantidad de horas: " + entrada.getChildrenCount());
                                 for (DataSnapshot datos : entrada.getChildren()) {
-                                    String horaEntrada = datos.getKey();
+                                    if (!datos.getKey().equals("Transporte")) {
 
-                                    System.out.println("Hora a Insertar: " + horaEntrada);
-                                    if (!horaRepetida(diaEntrada, horaEntrada)) {
+                                        String horaEntrada = datos.getKey();
 
-                                        try {
+                                        System.out.println("Hora a Insertar: " + horaEntrada);
+                                        if (!horaRepetida(diaEntrada, horaEntrada)) {
 
-                                            String humedadEntrada = datos.child("Humedad").getValue().toString();
-                                            System.out.println("Humedad " + humedadEntrada);
-                                            String temperaturaEntrada = datos.child("Temperatura").getValue().toString();
-                                            System.out.println("Temperatura " + temperaturaEntrada);
-                                            String lluviaEntrada = datos.child("Lluvia").getValue().toString();
-                                            System.out.println("mm/h de Lluvia " + lluviaEntrada);
-                                            String polvoEntrada = datos.child("Polvo").getValue().toString();
-                                            System.out.println("Cantidad de polvo en el aire " + polvoEntrada);
-                                            String presionEntrada = datos.child("Presión").getValue().toString();
-                                            System.out.println("Presion " + presionEntrada);
-                                            String velVientoEntrada = datos.child("Velocidad viento").getValue().toString();
-                                            System.out.println("Velocidad del viento " + velVientoEntrada);
+                                            try {
 
-                                            String sensacionTEntrada = datos.child("Sensacion").getValue().toString();
-                                            System.out.println("Sensacion termica " + sensacionTEntrada);
+                                                String humedadEntrada = datos.child("Humedad").getValue().toString();
+                                                System.out.println("Humedad " + humedadEntrada);
+                                                String temperaturaEntrada = datos.child("Temperatura").getValue().toString();
+                                                System.out.println("Temperatura " + temperaturaEntrada);
+                                                String lluviaEntrada = datos.child("Lluvia").getValue().toString();
+                                                System.out.println("mm/h de Lluvia " + lluviaEntrada);
+                                                String polvoEntrada = datos.child("Polvo").getValue().toString();
+                                                System.out.println("Cantidad de polvo en el aire " + polvoEntrada);
+                                                String presionEntrada = datos.child("Presión").getValue().toString();
+                                                System.out.println("Presion " + presionEntrada);
+                                                String velVientoEntrada = datos.child("Velocidad viento").getValue().toString();
+                                                System.out.println("Velocidad del viento " + velVientoEntrada);
+                                                String sensacionTEntrada = datos.child("Sensacion").getValue().toString();
+                                                System.out.println("Sensacion termica " + sensacionTEntrada);
 
-                                            guardarSQL(diaEntrada, horaEntrada, humedadEntrada, temperaturaEntrada, presionEntrada, lluviaEntrada,
-                                                    velVientoEntrada, polvoEntrada, sensacionTEntrada);
-                                            System.out.println("\n-----------------Hora guardada-------------------\n");
+                                                guardarSQL(diaEntrada, horaEntrada, humedadEntrada, temperaturaEntrada, presionEntrada, lluviaEntrada,
+                                                        velVientoEntrada, polvoEntrada, sensacionTEntrada);
+                                                System.out.println("\n-----------------Hora guardada-------------------\n");
 
-                                        } catch (ParseException | SQLException ex) {
-                                            Logger.getLogger(CRONPasarDatosSQL.class.getName()).log(Level.SEVERE, null, ex);
+                                            } catch (ParseException | SQLException ex) {
+                                                Logger.getLogger(CRONPasarDatosSQL.class.getName()).log(Level.SEVERE, null, ex);
+                                            }
                                         }
-                                    }
 
+                                    }
                                 }
+
                                 latch.countDown();
                                 //System.out.println("Valor - " +entrada.getValue(String.class));
                             } catch (ParseException ex) {
@@ -167,6 +176,33 @@ public class CRONPasarDatosSQL {
             }
         });
         latch.await();
+    }
+
+    public static void leerTransportes() throws InterruptedException {
+        latch = new CountDownLatch(1);
+        listaTotal = new HashMap<>();
+        System.out.println("Entra metodo");
+        //DatabaseReference referenciaComp = ref.child("contador");
+        refTransportes.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot ds) {
+
+                totalEntradas = ds.getChildrenCount();
+                for (DataSnapshot entrada : ds.getChildren()) {
+                    String usuario = entrada.getKey();
+                    String transporte = entrada.getValue(String.class);
+                    listaTotal.put(usuario, transporte);
+                }
+                latch.countDown();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError de) {
+                System.out.println("Lectura de datos cancelada");
+                latch.countDown();
+            }
+        });
+        //latch.await();
     }
 
     public static void fechaRepetida(String fecha) throws ParseException, SQLException {
@@ -291,5 +327,66 @@ public class CRONPasarDatosSQL {
 
         System.out.println("Escrito Todo guay");
 
+    }
+
+    public static void transformarParaSQL() throws SQLException {
+        for (Map.Entry pair : listaTotal.entrySet()) {
+            switch ((String) pair.getValue()) {
+                case "Coche":
+                    coche++;
+                    break;
+                case "Bici":
+                    bici++;
+                    break;
+                case "Apie":
+                    apie++;
+                    break;
+                case "Tpublico":
+                    tPublico++;
+                    break;
+                default:
+                    otros++;
+                    break;
+            }
+        }
+        enviarSQLT();
+    }
+
+    public static void enviarSQLT() throws SQLException {
+        String query = "insert into transporte"
+                + " values (?,?,?,?,?,?)";
+        PreparedStatement sentenciaP = conn.prepareStatement(query);
+        sentenciaP.setObject(1, diaEntrada);
+        sentenciaP.setInt(2, coche);
+        sentenciaP.setInt(3, apie);
+        sentenciaP.setInt(4, tPublico);
+        sentenciaP.setInt(5, bici);
+        sentenciaP.setInt(6, otros);
+
+        sentenciaP.execute();
+
+        System.out.println("Escrito: ");
+        System.out.println("Dia " + diaEntrada);
+        System.out.println("Nº gente coche: " + coche);
+        System.out.println("Nº gente bici: " + bici);
+        System.out.println("Nº gente transportes pub: " + tPublico);
+        System.out.println("Nº gente a pie: " + apie);
+        System.out.println("Nº gente otros: " + otros);
+    }
+
+    public static void inicilizaVariables() throws SQLException {
+        database = FirebaseDatabase.getInstance();
+        ref = database.getReference("Dia");
+
+        query = ref.orderByKey().limitToFirst(2);
+        conn = Connexion.getConnection();
+
+        parser = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+
+        bici = 0;
+        coche = 0;
+        tPublico = 0;
+        apie = 0;
+        otros = 0;
     }
 }

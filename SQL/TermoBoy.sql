@@ -17,6 +17,8 @@ CREATE TABLE Datos(
     humedad FLOAT(6,4),
     temperatura FLOAT(6,4),
     presionAt FLOAT(6,3),
+    sensacionT FLOAT(6,3),
+    polvo FLOAT(6,3),
     mm3Lluvia FLOAT(6,4),
     kmHViento FLOAT(6,4),
     #FOREIGN KEY A HORA
@@ -44,6 +46,7 @@ CREATE TABLE Transporte (
 SELECT * FROM Dia;
 Select * FROM Datos;
 DELETE From Datos;
+DELETE From Dia;
 
 
 
