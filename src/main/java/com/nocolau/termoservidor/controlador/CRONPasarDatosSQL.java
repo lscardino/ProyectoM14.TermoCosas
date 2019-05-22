@@ -96,7 +96,7 @@ public class CRONPasarDatosSQL {
                     System.out.println("ERROR: No hay datos que concuerden con la busqueda especificada.");
                 }
 
-                query.addValueEventListener(new ValueEventListener() {
+                query.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot ds) {
                         for (DataSnapshot entrada : ds.getChildren()) {
@@ -107,7 +107,7 @@ public class CRONPasarDatosSQL {
                                 String horaEntrada = datos.getKey();
 
                                 try {
-                                    if (!fechaRepetida("Holaaa", horaEntrada)) {
+                                    if (!fechaRepetida(diaEntrada, horaEntrada)) {
 
                                         String humedadEntrada = datos.child("Humedad").getValue().toString().substring(0, 5);
                                         String temperaturaEntrada = datos.child("Temperatura").getValue().toString().substring(0, 5);
@@ -119,7 +119,7 @@ public class CRONPasarDatosSQL {
                                         System.out.println("Humedad " + humedadEntrada);
                                         System.out.println("-------------------\n");
                                         
-                                        guardarSQL("Wolass", horaEntrada, humedadEntrada, temperaturaEntrada, presionEntrada, "jjaano", "otraAqki");
+                                        guardarSQL(diaEntrada, horaEntrada, humedadEntrada, temperaturaEntrada, presionEntrada, "jjaano", "otraAqki");
 
                                     }
                                 } catch (ParseException | SQLException ex) {
@@ -161,7 +161,7 @@ public class CRONPasarDatosSQL {
          */
         //Asi que usamso esto de prueba
         Date hoy = new Date();
-        System.out.println("Fecha que estamos buscando " + hoy);
+        System.out.println("Fecha que estamos buscando " + fecha + " hora: " + hora);
         String hoyparse = parser.format(hoy);
 
         System.out.println("Hoy- " + hoy);
@@ -169,7 +169,7 @@ public class CRONPasarDatosSQL {
         //Solo hace falta mirar aqui, ya que en dato solo se insertan cosas tras estra comprobacion.
         String queryFecha = "select count(*) from Dia d where d.dia=(?)";
         PreparedStatement sentenciaP = conn.prepareStatement(queryFecha);
-        sentenciaP.setObject(1, hoyparse);
+        sentenciaP.setObject(1, fecha);
 
         try (ResultSet rs = sentenciaP.executeQuery()) {
             if (rs.next()) {
@@ -177,15 +177,15 @@ public class CRONPasarDatosSQL {
                 System.out.println("Cantidad " + resultado);
                 //El día existe, miramos si existen las horas.
                 if (resultado > 0) {
-                    repetido = horaRepetida(hoyparse, hora);
-                    System.out.println("Repetido el dia y la hora");
+                    repetido = horaRepetida(fecha, hora);
+                    System.out.println("Dia ya insertado, comprobamos si tiene la hora tmb");
 
                 } else {
                     System.out.println("No existe, lo insertamos");
                     //No existe, lo creamos
                     String insertarFecha = "INSERT INTO Dia VALUES(?)";
                     sentenciaP = conn.prepareStatement(insertarFecha);
-                    sentenciaP.setObject(1, hoyparse);
+                    sentenciaP.setObject(1, fecha);
                     sentenciaP.execute();
 
                 }
@@ -266,12 +266,12 @@ public class CRONPasarDatosSQL {
         
          */
         Date hoy = new Date();
-        System.out.println("Fecha que vamos a insertar " + hoy);
+        System.out.println("Fecha que vamos a insertar " + dia);
         String hoyparse = parser.format(hoy);
 
         String insertarlosDatos = "INSERT INTO Datos VALUES (?,?,?,?,?,?,?)";
         PreparedStatement sentenciaP = conn.prepareStatement(insertarlosDatos);
-        sentenciaP.setObject(1, hoyparse);
+        sentenciaP.setObject(1, dia);
         sentenciaP.setString(2, hora);
         sentenciaP.setFloat(3, Float.parseFloat(humedad));
         sentenciaP.setFloat(4, Float.parseFloat(temperatura));
