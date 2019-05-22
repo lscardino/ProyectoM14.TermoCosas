@@ -73,25 +73,27 @@ public class CRONPasarDatosSQL {
         parser = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
 
         //fechaRepetida("hola", "pepsicola");
-        leerTransportes();
+        leerBDD();
+        latch.await();
         //enviarSQL();
     }
 
-    public static void leerTransportes() throws InterruptedException {
+    public static void leerBDD() throws InterruptedException {
         latch = new CountDownLatch(1);
 
         System.out.println("Entra metodo");
         //DatabaseReference referenciaComp = ref.child("contador");
-        ref.addValueEventListener(new ValueEventListener() {
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot ds) {
                 int cantidadDatos = (int) ds.getChildrenCount();
-                System.out.println("Cantidad datos - " + ds.getChildrenCount());
+                System.out.println("Cantidad de Dias TOTALES: " + ds.getChildrenCount());
 
                 //Hay que saber cuantos hay 
                 //o simplemenete deja dos y ya - aunqeu en verdad solo usas uno
                 if (cantidadDatos > 1) {
                     query = ref.orderByKey().limitToLast(1);
+                    System.out.println("Eeee query");
                 } else {
                     System.out.println("ERROR: No hay datos que concuerden con la busqueda especificada.");
                 }
@@ -100,36 +102,53 @@ public class CRONPasarDatosSQL {
                     @Override
                     public void onDataChange(DataSnapshot ds) {
                         for (DataSnapshot entrada : ds.getChildren()) {
-                            String diaEntrada = entrada.getKey();
-                            System.out.println("\n//////////////\n Dia: " + diaEntrada + "\n/////////////////////\n");
-                            for (DataSnapshot datos : entrada.getChildren()) {
+                            try {
+                                String diaEntrada = entrada.getKey();
+                                fechaRepetida(diaEntrada);
+                                System.out.println("Cantidad de horas: " + entrada.getChildrenCount());
+                                for (DataSnapshot datos : entrada.getChildren()) {
+                                    String horaEntrada = datos.getKey();
 
-                                String horaEntrada = datos.getKey();
+                                    System.out.println("Hora a Insertar: " + horaEntrada);
+                                    if (!horaRepetida(diaEntrada, horaEntrada)) {
 
-                                try {
-                                    if (!fechaRepetida(diaEntrada, horaEntrada)) {
+                                        try {
 
-                                        String humedadEntrada = datos.child("Humedad").getValue().toString().substring(0, 5);
-                                        String temperaturaEntrada = datos.child("Temperatura").getValue().toString().substring(0, 5);
-                                        String presionEntrada = datos.child("Presión").getValue().toString().substring(0, 5);
-                                        //Cambiar velocidad viento, ahora está si porque en Firebase es seimpre un 0;
-                                        String velVientoEntrada = datos.child("Velocidad viento").getValue().toString();
+                                            String humedadEntrada = datos.child("Humedad").getValue().toString();
+                                            System.out.println("Humedad " + humedadEntrada);
+                                            String temperaturaEntrada = datos.child("Temperatura").getValue().toString();
+                                            System.out.println("Temperatura " + temperaturaEntrada);
+                                            String lluviaEntrada = datos.child("Lluvia").getValue().toString();
+                                            System.out.println("mm/h de Lluvia " + lluviaEntrada);
+                                            String polvoEntrada = datos.child("Polvo").getValue().toString();
+                                            System.out.println("Cantidad de polvo en el aire " + polvoEntrada);
+                                            String presionEntrada = datos.child("Presión").getValue().toString();
+                                            System.out.println("Presion " + presionEntrada);
+                                            String velVientoEntrada = datos.child("Velocidad viento").getValue().toString();
+                                            System.out.println("Velocidad del viento " + velVientoEntrada);
 
-                                        System.out.println("Hora: " + horaEntrada);
-                                        System.out.println("Humedad " + humedadEntrada);
-                                        System.out.println("-------------------\n");
-                                        
-                                        guardarSQL(diaEntrada, horaEntrada, humedadEntrada, temperaturaEntrada, presionEntrada, "jjaano", "otraAqki");
+                                            String sensacionTEntrada = datos.child("Sensacion").getValue().toString();
+                                            System.out.println("Sensacion termica " + sensacionTEntrada);
 
+                                            guardarSQL(diaEntrada, horaEntrada, humedadEntrada, temperaturaEntrada, presionEntrada, lluviaEntrada,
+                                                    velVientoEntrada, polvoEntrada, sensacionTEntrada);
+                                            System.out.println("\n-----------------Hora guardada-------------------\n");
+
+                                        } catch (ParseException | SQLException ex) {
+                                            Logger.getLogger(CRONPasarDatosSQL.class.getName()).log(Level.SEVERE, null, ex);
+                                        }
                                     }
-                                } catch (ParseException | SQLException ex) {
-                                    Logger.getLogger(CRONPasarDatosSQL.class.getName()).log(Level.SEVERE, null, ex);
-                                }
 
+                                }
+                                latch.countDown();
+                                //System.out.println("Valor - " +entrada.getValue(String.class));
+                            } catch (ParseException ex) {
+                                Logger.getLogger(CRONPasarDatosSQL.class.getName()).log(Level.SEVERE, null, ex);
+                            } catch (SQLException ex) {
+                                Logger.getLogger(CRONPasarDatosSQL.class.getName()).log(Level.SEVERE, null, ex);
                             }
-                            //System.out.println("Valor - " +entrada.getValue(String.class));
                         }
-                        latch.countDown();
+
                     }
 
                     @Override
@@ -150,21 +169,9 @@ public class CRONPasarDatosSQL {
         latch.await();
     }
 
-    public static boolean fechaRepetida(String fecha, String hora) throws ParseException, SQLException {
-        boolean repetido = false;
-
-        //De momento no podemos parsear porque la fecha está puesta en dd-MM-yyyy
-        //Y en el firebase es dd-MM
-        /*
-        Date fechaParseada = parser.parse(fecha);
-        System.out.println("Fecha parseade: " + fecha);
-         */
-        //Asi que usamso esto de prueba
-        Date hoy = new Date();
-        System.out.println("Fecha que estamos buscando " + fecha + " hora: " + hora);
-        String hoyparse = parser.format(hoy);
-
-        System.out.println("Hoy- " + hoy);
+    public static void fechaRepetida(String fecha) throws ParseException, SQLException {
+        //boolean existeDia = false;
+        System.out.println("Fecha que estamos buscando " + fecha);
 
         //Solo hace falta mirar aqui, ya que en dato solo se insertan cosas tras estra comprobacion.
         String queryFecha = "select count(*) from Dia d where d.dia=(?)";
@@ -174,27 +181,26 @@ public class CRONPasarDatosSQL {
         try (ResultSet rs = sentenciaP.executeQuery()) {
             if (rs.next()) {
                 int resultado = rs.getInt(1);
-                System.out.println("Cantidad " + resultado);
+                System.out.println("Cuantos datos hay en DIA que concuerden con nuestra fecha: " + resultado);
                 //El día existe, miramos si existen las horas.
                 if (resultado > 0) {
-                    repetido = horaRepetida(fecha, hora);
-                    System.out.println("Dia ya insertado, comprobamos si tiene la hora tmb");
+                    //existeDia = true;
+                    System.out.println("Dia ya insertado, pasamos a mirar los datos de la DB");
 
                 } else {
-                    System.out.println("No existe, lo insertamos");
+                    System.out.println("El Dia no existe, lo insertamos");
                     //No existe, lo creamos
                     String insertarFecha = "INSERT INTO Dia VALUES(?)";
                     sentenciaP = conn.prepareStatement(insertarFecha);
                     sentenciaP.setObject(1, fecha);
                     sentenciaP.execute();
-
                 }
 
             } else {
                 System.out.println("Errror");
             }
         }
-        return repetido;
+        //return existeDia;
     }
 
     public static boolean horaRepetida(String dia, String hora) throws SQLException {
@@ -212,9 +218,10 @@ public class CRONPasarDatosSQL {
             int resultado = rs.getInt(1);
 
             if (resultado > 0) {
-                System.out.println("Existe, no creamos nada  y de hecho salimos");
+                System.out.println("Existe, nos saltamso esta hora!");
                 repetido = true;
             } else {
+                System.out.println("No hay ninguna entrada con esta hora, luz verde para seguir.");
                 /*
                 System.out.println("No existe, lo creamos");
                 String insertarEnDatos = "INSERT INTO Datos(dia,hora) VALUES (?,?)";
@@ -224,7 +231,7 @@ public class CRONPasarDatosSQL {
                 sentenciaP.execute();
 
                 System.out.println("Hora insertada: " + hora);
-                */
+                 */
                 repetido = false;
 
             }
@@ -238,7 +245,8 @@ public class CRONPasarDatosSQL {
 
     public static void guardarSQL(String dia, String hora, String humedad,
             String temperatura, String presion, String mmlluvia,
-            String kmhViento) throws SQLException, ParseException {
+            String kmhViento, String nivelPolvo, String sensacionT
+    ) throws SQLException, ParseException {
 
         /*
         String input = "20-05-2019";
@@ -265,19 +273,19 @@ public class CRONPasarDatosSQL {
          System.out.println("Formateada: " + hora);
         
          */
-        Date hoy = new Date();
-        System.out.println("Fecha que vamos a insertar " + dia);
-        String hoyparse = parser.format(hoy);
+        System.out.println("\n\nFecha que vamos a insertar " + dia + " Hora que vamso a insertar: " + hora);
 
-        String insertarlosDatos = "INSERT INTO Datos VALUES (?,?,?,?,?,?,?)";
+        String insertarlosDatos = "INSERT INTO Datos VALUES (?,?,?,?,?,?,?,?,?)";
         PreparedStatement sentenciaP = conn.prepareStatement(insertarlosDatos);
         sentenciaP.setObject(1, dia);
         sentenciaP.setString(2, hora);
         sentenciaP.setFloat(3, Float.parseFloat(humedad));
         sentenciaP.setFloat(4, Float.parseFloat(temperatura));
         sentenciaP.setFloat(5, Float.parseFloat(presion));
-        sentenciaP.setFloat(6, (float) 1.33);
-        sentenciaP.setFloat(7, (float) 99.33);
+        sentenciaP.setFloat(6, Float.parseFloat(sensacionT));
+        sentenciaP.setFloat(7, Float.parseFloat(nivelPolvo));
+        sentenciaP.setFloat(8, Float.parseFloat(mmlluvia));
+        sentenciaP.setFloat(9, Float.parseFloat(kmhViento));
 
         sentenciaP.execute();
 

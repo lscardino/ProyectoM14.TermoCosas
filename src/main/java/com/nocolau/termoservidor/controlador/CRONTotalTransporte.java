@@ -59,7 +59,7 @@ public class CRONTotalTransporte {
     static int apie;
     static int otros;
 
-    static LocalDate queDiaEsHoy;
+    static Date queDiaEsHoy;
 
     //De este map se puede estraer mucha más información.
     static HashMap<String, String> listaTotal;
@@ -77,34 +77,35 @@ public class CRONTotalTransporte {
         database = FirebaseDatabase.getInstance();
         conn = Connexion.getConnection();
 
-        queDiaEsHoy = LocalDate.now();
-        if (!fechaRepetida()) {                  
-        iniciarDiaSQL();
         dia = formatearFecha();
         System.out.println("Dia: " + dia);
-        //Hay que ver una forma de decirle que dia leer - es facil.
-        ref = database.getReference("Dia/" + dia + "/Transporte");
+        //queDiaEsHoy = new Date();
+        //queDiaEsHoy = 
+        fechaExiste();
+        if (!fechaRepetida()) {
 
-        bici = 0;
-        coche = 0;
-        tPublico = 0;
-        apie = 0;
-        otros = 0;
+            //Hay que ver una forma de decirle que dia leer - es facil.
+            ref = database.getReference("Dia/" + dia + "/Transporte");
 
-        leerTransportes();
-        //Sobra este await -> Ya esta dentro del metodo al final
-        latch.await();
-        transformarParaSQL();
-        //enviarSQL();
-        }else{
+            bici = 0;
+            coche = 0;
+            tPublico = 0;
+            apie = 0;
+            otros = 0;
+
+            leerTransportes();
+            //Sobra este await -> Ya esta dentro del metodo al final
+            latch.await();
+            transformarParaSQL();
+            //enviarSQL();
+        } else {
             System.out.println("Ya hay datos recogidos en esa fecha.");
         }
-        
 
     }
 
     public static String formatearFecha() {
-        DateFormat diaActual = new SimpleDateFormat("MM-dd");
+        DateFormat diaActual = new SimpleDateFormat("yyyy-MM-dd");
         return diaActual.format(new Date());
     }
 
@@ -113,9 +114,10 @@ public class CRONTotalTransporte {
         listaTotal = new HashMap<>();
         System.out.println("Entra metodo");
         //DatabaseReference referenciaComp = ref.child("contador");
-        ref.addValueEventListener(new ValueEventListener() {
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot ds) {
+                ;
                 totalEntradas = ds.getChildrenCount();
                 for (DataSnapshot entrada : ds.getChildren()) {
                     String usuario = entrada.getKey();
@@ -131,14 +133,11 @@ public class CRONTotalTransporte {
                 latch.countDown();
             }
         });
-        latch.await();
+        //latch.await();
     }
 
-    public static void transformarParaSQL() {
-        Iterator it = listaTotal.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry) it.next();
-
+    public static void transformarParaSQL() throws SQLException {
+        for (Map.Entry pair : listaTotal.entrySet()) {
             switch ((String) pair.getValue()) {
                 case "Coche":
                     coche++;
@@ -157,6 +156,7 @@ public class CRONTotalTransporte {
                     break;
             }
         }
+        enviarSQL();
     }
 
     public static void iniciarDiaSQL() throws SQLException {
@@ -172,7 +172,7 @@ public class CRONTotalTransporte {
         String query = "insert into transporte"
                 + " values (?,?,?,?,?,?)";
         PreparedStatement sentenciaP = conn.prepareStatement(query);
-        sentenciaP.setObject(1, queDiaEsHoy);
+        sentenciaP.setObject(1, dia);
         sentenciaP.setInt(2, coche);
         sentenciaP.setInt(3, apie);
         sentenciaP.setInt(4, tPublico);
@@ -182,7 +182,7 @@ public class CRONTotalTransporte {
         sentenciaP.execute();
 
         System.out.println("Escrito: ");
-        System.out.println("Dia " + queDiaEsHoy);
+        System.out.println("Dia " + dia);
         System.out.println("Nº gente coche: " + coche);
         System.out.println("Nº gente bici: " + bici);
         System.out.println("Nº gente transportes pub: " + tPublico);
@@ -190,24 +190,51 @@ public class CRONTotalTransporte {
         System.out.println("Nº gente otros: " + otros);
     }
 
-    public static boolean fechaRepetida() throws SQLException {
-        boolean repe = false;
-        System.out.println("Entro a lo de repetido");
+    public static void fechaExiste() throws SQLException {
+        System.out.println("Entro a chequear fecha");
         String query = "select count(*) as resultado from Dia d where d.dia=(?) ";
         PreparedStatement sentenciaP = conn.prepareStatement(query);
-        sentenciaP.setObject(1, queDiaEsHoy);
+        sentenciaP.setObject(1, dia);
 
         ResultSet rs = sentenciaP.executeQuery();
         if (rs.next()) {
-           int resultado = rs.getInt(1);
-            if (resultado>0) {
-                repe = true;
-            }
+            int resultado = rs.getInt(1);
             System.out.println("Cantidad " + resultado);
-        }else{
+            if (resultado == 0) {
+                //No existe el dia, lo creamos
+                iniciarDiaSQL();
+            }
+
+        } else {
             System.out.println("Errror");
         }
         rs.close();
-        return repe;
+
+    }
+
+    public static boolean fechaRepetida() throws SQLException {
+        boolean repetido = false;
+        System.out.println("Entro a lo de repetido");
+        String query = "select count(*) as resultado from Transporte d where d.dia=(?) ";
+        PreparedStatement sentenciaP = conn.prepareStatement(query);
+        sentenciaP.setObject(1, dia);
+
+        ResultSet rs = sentenciaP.executeQuery();
+        if (rs.next()) {
+            int resultado = rs.getInt(1);
+            System.out.println("Cantidad " + resultado);
+            if (resultado > 0) {
+                //Ya hay datos en transporte con este dia
+                //No existe el dia, lo creamos
+                //iniciarDiaSQL();
+                repetido = true;
+            }
+
+        } else {
+            System.out.println("Errror");
+        }
+        rs.close();
+        return repetido;
+
     }
 }
