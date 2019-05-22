@@ -13,27 +13,19 @@ CREATE TABLE Dia (
 
 CREATE TABLE Datos(
 	dia DATE,
-	hora TIME(5), 
-    humedad FLOAT(4,2),
-    temperatura FLOAT(4,2),
-    presionAt FLOAT(4,2),
-    mm3Lluvia FLOAT(4,2),
-    kmHViento FLOAT(4,2),
+	hora VARCHAR(5), 
+    humedad FLOAT(6,4),
+    temperatura FLOAT(6,4),
+    presionAt FLOAT(6,3),
+    mm3Lluvia FLOAT(6,4),
+    kmHViento FLOAT(6,4),
     #FOREIGN KEY A HORA
 	FOREIGN KEY (dia)
 	REFERENCES Dia(dia),
 	CONSTRAINT dATOS_pk PRIMARY KEY (dia, hora)
 );
-#
-#CREATE TABLE Hora(
-#	hora TIME,
-#    dia DATE,
-#    PRIMARY KEY (hora, dia)
-#);
 
-
-
-CREATE TABLE transporte (
+CREATE TABLE Transporte (
 	dia DATE PRIMARY KEY,
 	coche INT,
     a_pie INT,
@@ -44,22 +36,14 @@ CREATE TABLE transporte (
 	REFERENCES Dia(dia)
 );
 
-CREATE TABLE ejemplo(
-	ejemplo VARCHAR(30)
-);
-
-INSERT INTO ejemplo VALUES('wwwwww');
-INSERT INTO ejemplo VALUES('eeeeee');
-INSERT INTO ejemplo VALUES('eeee');
-
-#INSERT INTO Dia Values(TO_DATE('17/12/2005','DD/MM/YYYY'));
 
 
-#INSERT INTO Datos (humedad,temperatura,presionAt,mm3Lluvia,kmHViento) VALUES(80.3,21.3,0,2.21,6);
-#INSERT INTO Datos (humedad,temperatura,presionAt,mm3Lluvia,kmHViento) VALUES(60.0,25.1,3,0.0,2);
 
 
-SELECT * FROM transporte;
+
+SELECT * FROM Dia;
+Select * FROM Datos;
+DELETE From Datos;
 
 
 
