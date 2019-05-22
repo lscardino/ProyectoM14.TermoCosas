@@ -26,7 +26,9 @@ import java.util.logging.Logger;
  * @author Cho_S
  */
 public class ThreadClasificaSubeDato extends Thread {
-
+    
+    private float PORC_ACEPTACION;
+    
     private float _temp;
     private float _humedad;
     private float _presion;
@@ -35,6 +37,7 @@ public class ThreadClasificaSubeDato extends Thread {
     private float _velViento;
     private float _lluvia;
     private float _polvo;
+    private float _sensacion;
     private DatosPaquete paqueteDatos;
 
     private FirebaseDatabase database;
@@ -42,9 +45,10 @@ public class ThreadClasificaSubeDato extends Thread {
     private DateFormat dateFormat;
     private DateFormat horaFormat;
 
-    ThreadClasificaSubeDato(String nombre, DatosPaquete nPaquete) {
+    ThreadClasificaSubeDato(String nombre, DatosPaquete nPaquete, float porcAceptacion) {
         super(nombre);
         this.paqueteDatos = nPaquete;
+        this.PORC_ACEPTACION = porcAceptacion;
     }
 
     @Override
@@ -57,8 +61,9 @@ public class ThreadClasificaSubeDato extends Thread {
         _tempDHT22 = comparaDatos(paqueteDatos.getTempDHT22(), 10.0f);
         _humedadDHT22 = comparaDatos(paqueteDatos.getHumedadDHT22(), 20.0f);
         _velViento = comparaDatos(paqueteDatos.getVelViento(), 10000.0f);
-        //_lluvia = comparaDatos(paqueteDatos.getLluvia(), 10000.0f);
-        //_polvo = comparaDatos(paqueteDatos.getLluvia(), 10000.0f);
+        _lluvia = comparaDatos(paqueteDatos.getLluvia(), 10000.0f);
+        _polvo = comparaDatos(paqueteDatos.getLluvia(), 10000.0f);
+        _sensacion = comparaDatos(paqueteDatos.getLluvia(), 10000.0f);
 
         System.out.println("-  -  -  -  -  -  -");
         System.out.println("INFO - CLASIFICAR DATOS");
@@ -68,8 +73,9 @@ public class ThreadClasificaSubeDato extends Thread {
         System.out.println("Temperatura DHT22  " + _tempDHT22 + "ºC");
         System.out.println("Humedad DHT22  " + _humedadDHT22 + "%");
         System.out.println("Velocidad del viento  " + _velViento + "ms/rad");
-        //System.out.println("Lluvia  " + _lluvia + "mm/h");
-        //System.out.println("Polvo  " + _polvo + "mg/m3");
+        System.out.println("Lluvia  " + _lluvia + "mm/h");
+        System.out.println("Polvo  " + _polvo + "mg/m3");
+        System.out.println("Sensación térmica  " + _sensacion + "ºC");
 
         subirDatosFirebase();
     }
@@ -79,7 +85,7 @@ public class ThreadClasificaSubeDato extends Thread {
 
         //Mira los datos en recursivo, si es correcto lo guarda en un array para calcular
         for (int numeroComparar = 0; numeroComparar < datos.length; numeroComparar++) {
-            if (recurComparaDatos(numeroComparar, datos, 0, rangoError, 1, 2)) {
+            if (recurComparaDatos(numeroComparar, datos, 0, rangoError, 1, (int)(datos.length*PORC_ACEPTACION))) {
                 media.add(datos[numeroComparar]);
             }
         }
@@ -114,7 +120,7 @@ public class ThreadClasificaSubeDato extends Thread {
         database = FirebaseDatabase.getInstance();
 
         ref = database.getReference();
-        dateFormat = new SimpleDateFormat("MM-dd");
+        dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         horaFormat = new SimpleDateFormat("HH:mm");
 
         System.out.println("-  -  -  -  -  -  -");
@@ -127,8 +133,9 @@ public class ThreadClasificaSubeDato extends Thread {
         datos.put("Humedad DHT22", onlyTwoDecimalPlaces(String.valueOf(_humedadDHT22)));
         datos.put("Presión", onlyTwoDecimalPlaces(String.valueOf(_presion)));
         datos.put("Velocidad viento", onlyTwoDecimalPlaces(String.valueOf(_velViento)));
-        //datos.put("Lluvia ", onlyTwoDecimalPlaces(String.valueOf(_lluvia)));
-        //datos.put("Polvo", onlyTwoDecimalPlaces(String.valueOf(_polvo)));
+        datos.put("Lluvia", onlyTwoDecimalPlaces(String.valueOf(_lluvia)));
+        datos.put("Polvo", onlyTwoDecimalPlaces(String.valueOf(_polvo)));
+        datos.put("Sensacion", onlyTwoDecimalPlaces(String.valueOf(_sensacion)));
 
         Date date = new Date();
 

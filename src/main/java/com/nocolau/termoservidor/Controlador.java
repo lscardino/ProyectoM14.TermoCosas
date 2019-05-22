@@ -16,8 +16,8 @@ import java.io.IOException;
 public class Controlador {
 
     public static void main(String[] args) throws IOException {
-        long minutos = 30;
-        int div = 4;
+        long minutos = 2;
+        int div = 3;
         ConfiguracionServidor nConfig = new ConfiguracionServidor(minutos * 60000, div);
         try {
             switch (args.length) {

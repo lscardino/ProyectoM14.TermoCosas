@@ -12,8 +12,8 @@ const char* ssid = "MiFibra-58CD";
 const char* contra = "itdMY4Xj";
 
 ////Servicio
-//#define host "192.168.137.1"
-#define host "192.168.1.88"
+#define host "192.168.137.1"
+//#define host "192.168.1.88"
 const int port = 20003;
 
 ////Definir los pin de entrada y salida
@@ -30,6 +30,8 @@ WiFiClient client;
 float temperatura,humedad,presion,altitud;
 float t,h,hif;
 float velocidad = 0;
+float lluvia = 0;
+float polvo = 0;
 
 //Tiempo que espera para poder ver los datos
 long esperaTiempo = 5000;
@@ -61,6 +63,7 @@ long tiempoAntes;
     
     //listener del Anemometro
     attachInterrupt(digitalPinToInterrupt(pinAnemometro), interrupcionViento, RISING);
+    //attachInterrupt(digitalPinToInterrupt(), interrupcionLluvia, RISING);
   }
 
   void loop() {
@@ -68,6 +71,7 @@ long tiempoAntes;
         if(millis() > tiempoEsperado){
           miraTemBME280();
           miraTemDHT();
+          miraPolvo();
           Serial.println();
           Serial.print("Velocidad ms/rad :"); Serial.println(velocidad);
           Serial.println("-  -  -  -  -  -  -  -  -  -  -  -");
@@ -185,12 +189,20 @@ long tiempoAntes;
     
   }
 
+  void miraPolvo(){
+    
+  }
+
   void interrupcionViento(){
     //NOTA_PROFE -> Mira el tiempo que tarda en dar la vuelta
     Serial.println("Sensor Magnetico");
 
     velocidad = (millis()-tiempoAntes);
     tiempoAntes = millis();
+    
+  }
+
+  void interrupcionLluvia(){
     
   }
 
@@ -209,6 +221,7 @@ long tiempoAntes;
 float temperatura,humedad,presion,altitud;
 float t,h,hif;*/
     velocidad = 0;
+    lluvia = 0;
     tiempoAntes = millis();
   }
 
@@ -223,8 +236,10 @@ float t,h,hif;*/
     //client.println(altitud);
     client.println(t);
     client.println(h);
-    //client.println(hif);
     client.println(velocidad);
+    client.println(lluvia);
+    client.println(polvo);
+    client.println(hif);
     /*
      //DataInputStream
     client.println("- - - - - - -- ");

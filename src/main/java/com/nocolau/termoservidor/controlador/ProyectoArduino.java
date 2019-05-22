@@ -37,6 +37,7 @@ public class ProyectoArduino {
     private int puerto;
     private long TIEMPO_BUCLE;
     private int TIEMPO_DIV_VARIABLE;
+    private float PORC_ACEPTACION;
 
     private FileInputStream serviceAccount;
     private FirebaseOptions options;
@@ -49,6 +50,7 @@ public class ProyectoArduino {
         this.puerto = nConfigServidor.getPuerto();
         this.TIEMPO_BUCLE = nConfigServidor.getTIEMPO_BUCLE();
         this.TIEMPO_DIV_VARIABLE = nConfigServidor.getTIEMPO_DIV_VARIABLE();
+        PORC_ACEPTACION = 0.75f;
 
         //Mira si esta el Puerto esta libre.
         /*Si esta ocupado, hay un posiblidad que sea el mismo programa.
@@ -195,14 +197,9 @@ public class ProyectoArduino {
 
         private void recibirDatos() throws IOException, NumberFormatException {
 
-            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.temp, Float.parseFloat(in.readLine()), posNumDatos);
-            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.humedad, Float.parseFloat(in.readLine()), posNumDatos);
-            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.presion, Float.parseFloat(in.readLine()), posNumDatos);
-            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.tempDHT22, Float.parseFloat(in.readLine()), posNumDatos);
-            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.humedadDHT22, Float.parseFloat(in.readLine()), posNumDatos);
-            paqueteDatos.introducirdatos(DatosPaquete.EnumDato.velViento, Float.parseFloat(in.readLine()), posNumDatos);
-            //paqueteDatos.introducirdatos(DatosPaquete.EnumDato.lluvia, Float.parseFloat(in.readLine()), posNumDatos);
-            //paqueteDatos.introducirdatos(DatosPaquete.EnumDato.polvo, Float.parseFloat(in.readLine()), posNumDatos);
+            for (DatosPaquete.EnumDato enumDato: DatosPaquete.EnumDato.values()) {
+                paqueteDatos.introducirdatos(enumDato, Float.parseFloat(in.readLine()), posNumDatos); 
+            }
 
             System.out.println("-  -  -  -  -  -  -");
             System.out.println("INFO - datos recibidos (" + (posNumDatos + 1) + "/" + TIEMPO_DIV_VARIABLE + ")");/*
@@ -215,7 +212,7 @@ public class ProyectoArduino {
             posNumDatos++;
             if (posNumDatos >= TIEMPO_DIV_VARIABLE) {
                 posNumDatos = 0;
-                ThreadClasificaSubeDato clasifica = new ThreadClasificaSubeDato("HILO_CLASIFICAR_SUBE_DATOS", paqueteDatos);
+                ThreadClasificaSubeDato clasifica = new ThreadClasificaSubeDato("HILO_CLASIFICAR_SUBE_DATOS", paqueteDatos, PORC_ACEPTACION);
                 clasifica.start();
             }
         }

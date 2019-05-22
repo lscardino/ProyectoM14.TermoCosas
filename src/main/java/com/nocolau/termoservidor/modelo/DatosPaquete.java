@@ -19,7 +19,8 @@ public class DatosPaquete {
         humedadDHT22,
         velViento,
         lluvia,
-        polvo
+        polvo,
+        sensacion
     }
 
     private final int TIEMPO_DIV_VARIABLE;
@@ -31,6 +32,7 @@ public class DatosPaquete {
     private float[] _velViento;
     private float[] _lluvia;
     private float[] _polvo;
+    private float[] _sensacion;
 
     public DatosPaquete(int nTiempoDiv) {
         this.TIEMPO_DIV_VARIABLE = nTiempoDiv;
@@ -43,6 +45,7 @@ public class DatosPaquete {
         _velViento = new float[TIEMPO_DIV_VARIABLE];
         _lluvia = new float[TIEMPO_DIV_VARIABLE];
         _polvo = new float[TIEMPO_DIV_VARIABLE];
+        _sensacion = new float[TIEMPO_DIV_VARIABLE];
     }
 
     public void introducirdatos(EnumDato enumDato, float numDato, int numPos) {
@@ -70,6 +73,9 @@ public class DatosPaquete {
                 break;
             case polvo:
                 _polvo[numPos] = numDato;
+                break;
+            case sensacion:
+                _sensacion[numPos] = numDato;
                 break;
         }
     }
@@ -106,4 +112,8 @@ public class DatosPaquete {
         return _polvo;
     }
 
+    public float[] getSensacion() {
+        return _sensacion;
+    }
+    
 }
