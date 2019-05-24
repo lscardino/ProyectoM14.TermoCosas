@@ -11,6 +11,9 @@ package com.nocolau.termoservidor.modelo;
  */
 public class DatosPaquete {
 
+    /**
+     * @see Enum con los valores y nombres.
+     */
     public static enum EnumDato {
         temp,
         humedad,
@@ -48,6 +51,12 @@ public class DatosPaquete {
         _sensacion = new float[TIEMPO_DIV_VARIABLE];
     }
 
+    /**
+     * @see Método para introducir los datos en los diferentes Arrays que hay
+     * @param enumDato El Array a usar.
+     * @param numDato Valor a introducir.
+     * @param numPos La posición que tendrá.
+     */
     public void introducirdatos(EnumDato enumDato, float numDato, int numPos) {
         switch (enumDato) {
             case temp:

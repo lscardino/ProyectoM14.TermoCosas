@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 /**
  *
  * @author Cho_S
+ * @see Hilo que clasifica los datos y los envia al servidor FireBase
  */
 public class ThreadClasificaSubeDato extends Thread {
     
@@ -51,6 +52,9 @@ public class ThreadClasificaSubeDato extends Thread {
         this.PORC_ACEPTACION = porcAceptacion;
     }
 
+    /**
+     * @see Mira los datos si estan tendro del rango de error y las envia al servidor
+     */
     @Override
     public void run() {
 
@@ -79,7 +83,12 @@ public class ThreadClasificaSubeDato extends Thread {
 
         subirDatosFirebase();
     }
-
+/**
+ * @see método que revisa los datos entrantes si estan dentro del rango de error.
+ * @param datos Array los datos a revisar.
+ * @param rangoError Valor del rango de error que deben estar para poder visualizar.
+ * @return Devuelte una media de los valores correctos que están dentro del rango de error.
+ */
     float comparaDatos(float datos[], float rangoError) {
         List<Float> media = new ArrayList<>();
 
@@ -100,6 +109,16 @@ public class ThreadClasificaSubeDato extends Thread {
         return (sum / count);
     }
 
+    /**
+     * @see Método recursivo para calcular los datos.
+     * @param datoFijo Posición del valor principal para controlar.
+     * @param datos Array con los datos a revisar.
+     * @param posArray Posición del valor a revisar con el principal.
+     * @param rangoError El rango de error que puede tener para poder pasar.
+     * @param datosCorrectos Número de datos correctos que han pasado.
+     * @param minPas Número de datos correctos para poder pasar la prueba.
+     * @return 
+     */
     boolean recurComparaDatos(int datoFijo, float datos[], int posArray, float rangoError, int datosCorrectos, int minPas) {
         if (posArray >= datos.length) {
             return datosCorrectos >= minPas;
@@ -115,7 +134,10 @@ public class ThreadClasificaSubeDato extends Thread {
             }
         }
     }
-
+    
+    /**
+     * @see Método pasar subir los datos revisado a la base de datos.
+     */
     private void subirDatosFirebase() {
         database = FirebaseDatabase.getInstance();
 
@@ -126,7 +148,7 @@ public class ThreadClasificaSubeDato extends Thread {
         System.out.println("-  -  -  -  -  -  -");
         System.out.println("INFO - Subiendo Datos al servidor");
 
-        HashMap<String, Float> datos = new HashMap<>();
+        HashMap<String, Object> datos = new HashMap<>();
         datos.put("Temperatura", onlyTwoDecimalPlaces(String.valueOf(_temp)));
         datos.put("Temperatura DHT22", onlyTwoDecimalPlaces(String.valueOf(_tempDHT22)));
         datos.put("Humedad", onlyTwoDecimalPlaces(String.valueOf(_humedad)));
@@ -139,7 +161,7 @@ public class ThreadClasificaSubeDato extends Thread {
 
         Date date = new Date();
 
-        for (Map.Entry<String, Float> entry : datos.entrySet()) {
+        for (Map.Entry<String, Object> entry : datos.entrySet()) {
 
             CountDownLatch donemm3Lluv = new CountDownLatch(1);
             Map<String, Object> dato = new HashMap<>();
@@ -160,12 +182,16 @@ public class ThreadClasificaSubeDato extends Thread {
         }
 
     }
-
-    private float onlyTwoDecimalPlaces(String number) {
+/**
+ * @see Método para recortar los float a XX.XX
+ * @param number Valor en string del float a recortar.
+ * @return El valor en un formato más pequeño.
+ */
+    private String onlyTwoDecimalPlaces(String number) {
         StringBuilder sbFloat = new StringBuilder(number);
         int start = sbFloat.indexOf(".");
         if (start < 0) {
-            return new Float(sbFloat.toString());
+            return sbFloat.toString();
         }
         int end = start + 3;
         if ((end) > (sbFloat.length() - 1)) {
@@ -174,6 +200,6 @@ public class ThreadClasificaSubeDato extends Thread {
 
         String twoPlaces = sbFloat.substring(start, end);
         sbFloat.replace(start, sbFloat.length(), twoPlaces);
-        return new Float(sbFloat.toString());
+        return sbFloat.toString();
     }
 }

@@ -8,8 +8,8 @@
 #define DHTTYPE DHT22
 
 ////Internet
-const char* ssid = "MiFibra-58CD";
-const char* contra = "itdMY4Xj";
+const char* ssid = "Proyecto_TermoBoy";
+const char* contra = "55555555";
 
 ////Servicio
 #define host "192.168.137.1"
@@ -18,8 +18,11 @@ const int port = 20003;
 
 ////Definir los pin de entrada y salida
 const int pinAnemometro = 0;
+//const int pinPluvimetro;
 const int pinLed = 2;
 const int pinDHT = 14;
+//const int pintLedPolvo;
+const int pinPolvo = 0;
 
 ////Declaracion de objetos
 Adafruit_BME280 bme;
@@ -34,8 +37,8 @@ float lluvia = 0;
 float polvo = 0;
 
 //Tiempo que espera para poder ver los datos
-long esperaTiempo = 5000;
-long tiempoEsperado = 0;
+long esperaTiempo = 20000;
+long tiempoEsperar = 0;
 long tiempoAntes;
   void setup() {
     Serial.begin(115200);
@@ -45,7 +48,9 @@ long tiempoAntes;
     dht.begin();
     
     pinMode(pinAnemometro, INPUT_PULLUP);//INPUT);
+//    pinMode(pinPluvimetro, INPUT_PULLUP);//INPUT);
     pinMode(pinLed, OUTPUT);//INPUT);
+//    pinMode(pinLedPolvo, OUTPUT);//INPUT);
     
     //Configurar WiFi
     WiFi.mode(WIFI_STA);// modo cliente wifi
@@ -59,19 +64,19 @@ long tiempoAntes;
     
     Serial.print("Tiempo Actual    " ); Serial.println(tiempoAntes);
     Serial.print("Tiempo a esperar " ); Serial.println(esperaTiempo);
-    Serial.print("Resultado Tiempo " ); Serial.println(tiempoEsperado);
+    Serial.print("Resultado Tiempo " ); Serial.println(tiempoEsperar);
     
     //listener del Anemometro
     attachInterrupt(digitalPinToInterrupt(pinAnemometro), interrupcionViento, RISING);
-    //attachInterrupt(digitalPinToInterrupt(), interrupcionLluvia, RISING);
+    //attachInterrupt(digitalPinToInterrupt(pinPluvimetro), interrupcionLluvia, RISING);
   }
 
   void loop() {
     if(client.connected()){
-        if(millis() > tiempoEsperado){
+        if(millis() > tiempoEsperar){
           miraTemBME280();
           miraTemDHT();
-          miraPolvo();
+          //miraPolvo();
           Serial.println();
           Serial.print("Velocidad ms/rad :"); Serial.println(velocidad);
           Serial.println("-  -  -  -  -  -  -  -  -  -  -  -");
@@ -79,7 +84,7 @@ long tiempoAntes;
           client.println("0000");
           delay(5);
           enviarDatos();
-          tiempoEsperado = esperaTiempo + millis();
+          tiempoEsperar = esperaTiempo + millis();
           reiniciarVariables();
         }
         /*else{
@@ -145,7 +150,7 @@ long tiempoAntes;
     digitalWrite(pinLed, HIGH);
 
     tiempoAntes = millis();
-    tiempoEsperado = esperaTiempo + tiempoAntes;
+    tiempoEsperar = esperaTiempo + tiempoAntes;
   }
 
   void miraTemDHT(){
@@ -190,7 +195,11 @@ long tiempoAntes;
   }
 
   void miraPolvo(){
-    
+//    digitalWrite(pinLedPolvo,LOW);
+    delayMicroseconds(280);
+ //   polvo = analogRead(pinPolvo);
+    delayMicroseconds(40);
+ //   digitalWrite(pinLedPolvo,HIGH);
   }
 
   void interrupcionViento(){
@@ -217,9 +226,6 @@ long tiempoAntes;
   }
 
   void reiniciarVariables(){
-    /*
-float temperatura,humedad,presion,altitud;
-float t,h,hif;*/
     velocidad = 0;
     lluvia = 0;
     tiempoAntes = millis();
@@ -228,7 +234,6 @@ float t,h,hif;*/
   void enviarDatos(){
     Serial.println("INFO - Enviar Datos");
     digitalWrite(pinLed, LOW);
-    //String UT8
 
     client.println(temperatura);
     client.println(humedad);
@@ -242,17 +247,12 @@ float t,h,hif;*/
     client.println(hif);
     /*
      //DataInputStream
-    client.println("- - - - - - -- ");
-    client.print("hola");
-    client.println("hola");
-    //String UT8
     client.print(1);
     client.println(2);
     client.println(123);
     client.println(12.3f);
     //String UTF8 and numer Byte
     client.write(12);
-    client.write("1");
-    //client.readStringUntil('\r');*/
+    client.write("1");*/
     digitalWrite(pinLed, HIGH);
   }

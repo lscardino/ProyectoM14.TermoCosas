@@ -44,7 +44,7 @@ public class EjecutarFireBase {
     static DatabaseReference ref;
     static CountDownLatch latch;
 
-    public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException, ExecutionException {
+    public EjecutarFireBase() throws FileNotFoundException, IOException, InterruptedException, ExecutionException {
 
         //INICIALIZACION MOVIDAS FIREBASE
         FileInputStream serviceAccount = new FileInputStream("termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");

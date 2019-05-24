@@ -15,7 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * @see Clase que conecta con el servidor para cerrar sessión.
  * @author Cho_S
  */
 public class ThreadOutServidor extends Thread {
@@ -24,6 +24,11 @@ public class ThreadOutServidor extends Thread {
     private CountDownLatch latch;
     private int puerto;
 
+    /**
+     * 
+     * @param nConfig Configuración del servidor para recoger el puerto
+     * @param latchRevocarServidor Un "Await" para que el hilo que llamo a esté esperé a terminar los procesos.
+     */
     ThreadOutServidor(ConfiguracionServidor nConfig, CountDownLatch latchRevocarServidor) {
         this.configServidor = nConfig;
         this.latch = latchRevocarServidor;

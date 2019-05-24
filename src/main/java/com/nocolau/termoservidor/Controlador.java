@@ -10,13 +10,22 @@ import com.nocolau.termoservidor.modelo.ConfiguracionServidor;
 import java.io.IOException;
 
 /**
- *
+ * 
  * @author Cho_S
+ * @author LScardini
  */
 public class Controlador {
-
-    public static void main(String[] args) throws IOException {
-        long minutos = 2;
+    /**
+     * 
+     * @param args
+     * Variables a pasar para configurar;
+     * -Puerto
+     * -Tiempo a Esperar, Muestra a Dividir
+     * -Puerto, Tiempo a Esperar, Muestra a Dividir
+     * @throws IOException 
+     */
+    public static void main(String[] args) {
+        long minutos = 30;
         int div = 3;
         ConfiguracionServidor nConfig = new ConfiguracionServidor(minutos * 60000, div);
         try {
@@ -41,11 +50,17 @@ public class Controlador {
             System.out.println("ERROR - Valor incorrecto, el programa usara los valores predeterminados");
         }
         System.out.println("INFO -        Puerto        -> " + nConfig.getPuerto());
-        System.out.println("INFO -   Tiempo de datos    -> " + nConfig.getTIEMPO_BUCLE());
+        System.out.println("INFO -   Tiempo de datos    -> " + nConfig.getTIEMPO_BUCLE() + "ms " 
+                + convertToMin(nConfig.getTIEMPO_BUCLE()) + "min");
         System.out.println("INFO -  Tiempo muestras(" + nConfig.getTIEMPO_DIV_VARIABLE()
-                + ")  -> " + (nConfig.getTIEMPO_BUCLE() / nConfig.getTIEMPO_DIV_VARIABLE()) + "ms"
+                + ")  -> " + (nConfig.getTIEMPO_BUCLE() / nConfig.getTIEMPO_DIV_VARIABLE()) + "ms "
+                + convertToMin((nConfig.getTIEMPO_BUCLE() / nConfig.getTIEMPO_DIV_VARIABLE())) + "min"
         );
         //new SkOutServidor((nConfig));
         ProyectoArduino arduino = new ProyectoArduino(nConfig);
+    }
+    
+    private static long convertToMin(long miliSeg){
+        return miliSeg/60000;
     }
 }

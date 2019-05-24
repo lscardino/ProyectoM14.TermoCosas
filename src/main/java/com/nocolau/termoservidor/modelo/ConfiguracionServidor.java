@@ -14,6 +14,7 @@ public class ConfiguracionServidor {
     private int puerto = 20003;
     private long TIEMPO_BUCLE = 30000;
     private int TIEMPO_DIV_VARIABLE = 3;
+    private float PORC_ACEPTACION = 0.75f;
 
     public ConfiguracionServidor() {
     }
@@ -56,6 +57,14 @@ public class ConfiguracionServidor {
 
     public void setTIEMPO_DIV_VARIABLE(int TIEMPO_DIV_VARIABLE) {
         this.TIEMPO_DIV_VARIABLE = TIEMPO_DIV_VARIABLE;
+    }
+
+    public float getPORC_ACEPTACION() {
+        return PORC_ACEPTACION;
+    }
+
+    public void setPORC_ACEPTACION(float PORC_ACEPTACION) {
+        this.PORC_ACEPTACION = PORC_ACEPTACION;
     }
 
 }

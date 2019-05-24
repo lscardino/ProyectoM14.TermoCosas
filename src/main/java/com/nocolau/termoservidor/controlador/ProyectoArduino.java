@@ -12,6 +12,7 @@ import com.nocolau.termoservidor.modelo.DatosPaquete;
 import com.nocolau.termoservidor.modelo.ConfiguracionServidor;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -19,6 +20,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
@@ -31,9 +33,6 @@ import java.util.logging.Logger;
  */
 public class ProyectoArduino {
 
-    /**
-     * @param args the command line arguments
-     */
     private int puerto;
     private long TIEMPO_BUCLE;
     private int TIEMPO_DIV_VARIABLE;
@@ -46,11 +45,18 @@ public class ProyectoArduino {
     private static boolean bucleCrearServidor = true;
     private static boolean bucleServidorEscucha = true;
 
+    /**
+     *
+     * @param nConfigServidor Class con las configuraciones hechas o
+     * predeerminadas del main
+     * @see Inicia la conexión con la base de datos FireBase y Crea el servidor
+     * socket para recibir de los microordenadores
+     */
     public ProyectoArduino(ConfiguracionServidor nConfigServidor) {
         this.puerto = nConfigServidor.getPuerto();
         this.TIEMPO_BUCLE = nConfigServidor.getTIEMPO_BUCLE();
         this.TIEMPO_DIV_VARIABLE = nConfigServidor.getTIEMPO_DIV_VARIABLE();
-        PORC_ACEPTACION = 0.75f;
+        this.PORC_ACEPTACION = nConfigServidor.getPORC_ACEPTACION();
 
         //Mira si esta el Puerto esta libre.
         /*Si esta ocupado, hay un posiblidad que sea el mismo programa.
@@ -62,7 +68,10 @@ public class ProyectoArduino {
         ThreadControladorTerminal controladorTerminal = new ThreadControladorTerminal("HILO_TERMINAL", nConfigServidor);
         //controladorTerminal.start();
         try {
-            serviceAccount = new FileInputStream("termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            File archivo = new File(getClass().getResource("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json").getFile());
+            //serviceAccount = new FileInputStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            //serviceAccount = (FileInputStream) ProyectoArduino.class.getResourceAsStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            serviceAccount = new FileInputStream(archivo);
             options = new FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .setDatabaseUrl("https://termomovidas.firebaseio.com/")
@@ -77,13 +86,15 @@ public class ProyectoArduino {
         //SERVIDOR
         try {
             ServerSocket ssk = new ServerSocket(puerto);
-            ssk.setSoTimeout((int) (TIEMPO_BUCLE));
+            ssk.setSoTimeout((int) (10000));
             System.out.println(ssk.getLocalSocketAddress().toString());
             System.out.println(ssk.getInetAddress().getLocalHost());
 
+            ArrayList<Socket> skList = new ArrayList<>();
             while (bucleCrearServidor) {
                 try {
-                    Socket sk = ssk.accept(); //espera una conexión de un cliente
+                    Socket sk = ssk.accept();
+                    skList.add(sk); //espera una conexión de un cliente
                     System.out.println("-  -  -  -  -  -  -  -  -  -  -  -  -");
                     Servidor servidor = new Servidor("HILO_SERVIDOR", sk);
                     servidor.start();
@@ -91,11 +102,25 @@ public class ProyectoArduino {
                 }
             }
             ssk.close();
+            for (Socket next : skList) {
+                try {
+                    next.close();
+                } catch (IOException ex) {
+                }
+            }
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
+        } finally {
+            controladorTerminal.interrupt();
+            System.out.println("INFO - Hilo crea crea socket CERRADO");
         }
     }
 
+    /**
+     *
+     * @param nConfigServidor Class con la configuración del servidor
+     * @see Crea un hilo para iniciar en el servidor y cerrar la sessión.
+     */
     private void pararServidorActual(ConfiguracionServidor nConfigServidor) {
         CountDownLatch latchRevocarServidor = new CountDownLatch(1);
         ThreadOutServidor outServer = new ThreadOutServidor(nConfigServidor, latchRevocarServidor);
@@ -107,11 +132,19 @@ public class ProyectoArduino {
         }
     }
 
+    /**
+     * @see Hilo que controla las entradas del terminal
+     */
     class ThreadControladorTerminal extends Thread {
 
         private final String STR_SALIR = "EXIT";
         private ConfiguracionServidor configServidor;
 
+        /**
+         *
+         * @param nombre Nombre del hilo
+         * @param nConfigServidor configuracion del servidor para poder conectar
+         */
         public ThreadControladorTerminal(String nombre, ConfiguracionServidor nConfigServidor) {
             super(nombre);
             this.configServidor = nConfigServidor;
@@ -126,6 +159,8 @@ public class ProyectoArduino {
                 toReceive = sc.nextLine();
             } while (!STR_SALIR.equals(toReceive.trim().toUpperCase()) || bucleCrearServidor);
 
+            System.out.println("Preparando para salir");
+
             if (bucleCrearServidor) {
                 pararServidorActual(configServidor);
             }
@@ -133,6 +168,10 @@ public class ProyectoArduino {
 
     }
 
+    /**
+     * @see Hilo que inicia al conectar un usuario al socket Envia datos y
+     * recibe de los microordenadores que estan conectados
+     */
     class Servidor extends Thread {
 
         private Socket sk;
@@ -159,7 +198,6 @@ public class ProyectoArduino {
                 //Lee un caracter en formato byte
                 do {
                     try {
-
                         switch (in.readLine()) {
                             case "1111":
                                 out.write((TIEMPO_BUCLE / TIEMPO_DIV_VARIABLE) + "");
@@ -182,7 +220,6 @@ public class ProyectoArduino {
                     }
 
                 } while (bucleServidorEscucha);
-                System.out.println("INFO - Hilo cerrado");
             } catch (IOException ex) {
                 Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
             } finally {
@@ -191,14 +228,22 @@ public class ProyectoArduino {
                 } catch (IOException ex) {
                     Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
                 }
+                System.out.println("INFO - Hilo cerrado");
             }
 
         }
 
+        /**
+         *
+         * @throws IOException Error al leer los datos
+         * @throws NumberFormatException Error al pasar los datos a float
+         * @see Lee los datos recibidos en una clase paquete y espera al tiempo
+         * para clasificar los datos
+         */
         private void recibirDatos() throws IOException, NumberFormatException {
 
-            for (DatosPaquete.EnumDato enumDato: DatosPaquete.EnumDato.values()) {
-                paqueteDatos.introducirdatos(enumDato, Float.parseFloat(in.readLine()), posNumDatos); 
+            for (DatosPaquete.EnumDato enumDato : DatosPaquete.EnumDato.values()) {
+                paqueteDatos.introducirdatos(enumDato, Float.parseFloat(in.readLine()), posNumDatos);
             }
 
             System.out.println("-  -  -  -  -  -  -");
