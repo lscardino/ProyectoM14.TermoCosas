@@ -27,9 +27,9 @@ import java.util.logging.Logger;
  * @see Hilo que clasifica los datos y los envia al servidor FireBase
  */
 public class ThreadClasificaSubeDato extends Thread {
-    
+
     private float PORC_ACEPTACION;
-    
+
     private float _temp;
     private float _humedad;
     private float _presion;
@@ -43,8 +43,9 @@ public class ThreadClasificaSubeDato extends Thread {
 
     private FirebaseDatabase database;
     private DatabaseReference ref;
-    private DateFormat dateFormat;
-    private DateFormat horaFormat;
+    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private DateFormat horaFormat = new SimpleDateFormat("HH:mm");
+    Date date = new Date();
 
     ThreadClasificaSubeDato(String nombre, DatosPaquete nPaquete, float porcAceptacion) {
         super(nombre);
@@ -53,7 +54,8 @@ public class ThreadClasificaSubeDato extends Thread {
     }
 
     /**
-     * @see Mira los datos si estan tendro del rango de error y las envia al servidor
+     * @see Mira los datos si estan tendro del rango de error y las envia al
+     * servidor
      */
     @Override
     public void run() {
@@ -82,19 +84,26 @@ public class ThreadClasificaSubeDato extends Thread {
         System.out.println("Sensación térmica  " + _sensacion + "ºC");
 
         subirDatosFirebase();
+        if (horaFormat.format(date).equals("00:00")) {
+            //Subir tmb lo de lso transportes
+        }
     }
-/**
- * @see método que revisa los datos entrantes si estan dentro del rango de error.
- * @param datos Array los datos a revisar.
- * @param rangoError Valor del rango de error que deben estar para poder visualizar.
- * @return Devuelte una media de los valores correctos que están dentro del rango de error.
- */
+
+    /**
+     * @see método que revisa los datos entrantes si estan dentro del rango de
+     * error.
+     * @param datos Array los datos a revisar.
+     * @param rangoError Valor del rango de error que deben estar para poder
+     * visualizar.
+     * @return Devuelte una media de los valores correctos que están dentro del
+     * rango de error.
+     */
     float comparaDatos(float datos[], float rangoError) {
         List<Float> media = new ArrayList<>();
 
         //Mira los datos en recursivo, si es correcto lo guarda en un array para calcular
         for (int numeroComparar = 0; numeroComparar < datos.length; numeroComparar++) {
-            if (recurComparaDatos(numeroComparar, datos, 0, rangoError, 1, (int)(datos.length*PORC_ACEPTACION))) {
+            if (recurComparaDatos(numeroComparar, datos, 0, rangoError, 1, (int) (datos.length * PORC_ACEPTACION))) {
                 media.add(datos[numeroComparar]);
             }
         }
@@ -117,7 +126,7 @@ public class ThreadClasificaSubeDato extends Thread {
      * @param rangoError El rango de error que puede tener para poder pasar.
      * @param datosCorrectos Número de datos correctos que han pasado.
      * @param minPas Número de datos correctos para poder pasar la prueba.
-     * @return 
+     * @return
      */
     boolean recurComparaDatos(int datoFijo, float datos[], int posArray, float rangoError, int datosCorrectos, int minPas) {
         if (posArray >= datos.length) {
@@ -134,7 +143,7 @@ public class ThreadClasificaSubeDato extends Thread {
             }
         }
     }
-    
+
     /**
      * @see Método pasar subir los datos revisado a la base de datos.
      */
@@ -142,8 +151,6 @@ public class ThreadClasificaSubeDato extends Thread {
         database = FirebaseDatabase.getInstance();
 
         ref = database.getReference();
-        dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        horaFormat = new SimpleDateFormat("HH:mm");
 
         System.out.println("-  -  -  -  -  -  -");
         System.out.println("INFO - Subiendo Datos al servidor");
@@ -158,8 +165,6 @@ public class ThreadClasificaSubeDato extends Thread {
         datos.put("Lluvia", onlyTwoDecimalPlaces(String.valueOf(_lluvia)));
         datos.put("Polvo", onlyTwoDecimalPlaces(String.valueOf(_polvo)));
         datos.put("Sensacion", onlyTwoDecimalPlaces(String.valueOf(_sensacion)));
-
-        Date date = new Date();
 
         for (Map.Entry<String, Object> entry : datos.entrySet()) {
 
@@ -182,11 +187,49 @@ public class ThreadClasificaSubeDato extends Thread {
         }
 
     }
-/**
- * @see Método para recortar los float a XX.XX
- * @param number Valor en string del float a recortar.
- * @return El valor en un formato más pequeño.
- */
+    
+    private void crearTransportes() {
+        database = FirebaseDatabase.getInstance();
+
+        ref = database.getReference();
+
+        System.out.println("-  -  -  -  -  -  -");
+        System.out.println("INFO - Subiendo Trasnportes al servidor");
+
+        HashMap<String, Object> datos = new HashMap<>();
+        datos.put("Coche", String.valueOf(0));
+        datos.put("Bici", String.valueOf(0));
+        datos.put("Apie", String.valueOf(0));
+        datos.put("Tpublico", String.valueOf(0));
+       
+
+        for (Map.Entry<String, Object> entry : datos.entrySet()) {
+
+            CountDownLatch donemm3Lluv = new CountDownLatch(1);
+            Map<String, Object> dato = new HashMap<>();
+            dato.put(entry.getKey(), entry.getValue());
+
+            FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date) + "/Transporte").updateChildren(dato, new DatabaseReference.CompletionListener() {
+                @Override
+                public void onComplete(DatabaseError de, DatabaseReference dr) {
+                    donemm3Lluv.countDown();
+                }
+            });
+            try {
+                donemm3Lluv.await();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+
+    }
+
+    /**
+     * @see Método para recortar los float a XX.XX
+     * @param number Valor en string del float a recortar.
+     * @return El valor en un formato más pequeño.
+     */
     private String onlyTwoDecimalPlaces(String number) {
         StringBuilder sbFloat = new StringBuilder(number);
         int start = sbFloat.indexOf(".");

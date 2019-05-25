@@ -14,13 +14,13 @@ CREATE TABLE Dia (
 CREATE TABLE Datos(
 	dia DATE,
 	hora VARCHAR(5), 
-    humedad FLOAT(6,4),
-    temperatura FLOAT(6,4),
-    presionAt FLOAT(6,3),
-    sensacionT FLOAT(6,3),
-    polvo FLOAT(6,3),
-    mm3Lluvia FLOAT(6,4),
-    kmHViento FLOAT(6,4),
+    humedad FLOAT,
+    temperatura FLOAT,
+    presionAt FLOAT,
+    sensacionT FLOAT,
+    polvo FLOAT,
+    mm3Lluvia FLOAT,
+    kmHViento FLOAT,
     #FOREIGN KEY A HORA
 	FOREIGN KEY (dia)
 	REFERENCES Dia(dia),
@@ -45,8 +45,10 @@ CREATE TABLE Transporte (
 
 SELECT * FROM Dia;
 Select * FROM Datos;
+Select * FROM Transporte;
 DELETE From Datos;
 DELETE From Dia;
+DELETE From Transporte;
 
 
 
