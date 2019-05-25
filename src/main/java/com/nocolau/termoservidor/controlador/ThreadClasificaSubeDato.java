@@ -27,9 +27,9 @@ import java.util.logging.Logger;
  * @see Hilo que clasifica los datos y los envia al servidor FireBase
  */
 public class ThreadClasificaSubeDato extends Thread {
-    
+
     private float PORC_ACEPTACION;
-    
+
     private float _temp;
     private float _humedad;
     private float _presion;
@@ -53,7 +53,8 @@ public class ThreadClasificaSubeDato extends Thread {
     }
 
     /**
-     * @see Mira los datos si estan tendro del rango de error y las envia al servidor
+     * @see Mira los datos si estan tendro del rango de error y las envia al
+     * servidor
      */
     @Override
     public void run() {
@@ -66,8 +67,8 @@ public class ThreadClasificaSubeDato extends Thread {
         _humedadDHT22 = comparaDatos(paqueteDatos.getHumedadDHT22(), 20.0f);
         _velViento = comparaDatos(paqueteDatos.getVelViento(), 10000.0f);
         _lluvia = comparaDatos(paqueteDatos.getLluvia(), 10000.0f);
-        _polvo = comparaDatos(paqueteDatos.getLluvia(), 10000.0f);
-        _sensacion = comparaDatos(paqueteDatos.getLluvia(), 10000.0f);
+        _polvo = comparaDatos(paqueteDatos.getPolvo(), 10000.0f);
+        _sensacion = comparaDatos(paqueteDatos.getSensacion(), 10000.0f);
 
         System.out.println("-  -  -  -  -  -  -");
         System.out.println("INFO - CLASIFICAR DATOS");
@@ -83,18 +84,22 @@ public class ThreadClasificaSubeDato extends Thread {
 
         subirDatosFirebase();
     }
-/**
- * @see método que revisa los datos entrantes si estan dentro del rango de error.
- * @param datos Array los datos a revisar.
- * @param rangoError Valor del rango de error que deben estar para poder visualizar.
- * @return Devuelte una media de los valores correctos que están dentro del rango de error.
- */
+
+    /**
+     * @see método que revisa los datos entrantes si estan dentro del rango de
+     * error.
+     * @param datos Array los datos a revisar.
+     * @param rangoError Valor del rango de error que deben estar para poder
+     * visualizar.
+     * @return Devuelte una media de los valores correctos que están dentro del
+     * rango de error.
+     */
     float comparaDatos(float datos[], float rangoError) {
         List<Float> media = new ArrayList<>();
 
         //Mira los datos en recursivo, si es correcto lo guarda en un array para calcular
         for (int numeroComparar = 0; numeroComparar < datos.length; numeroComparar++) {
-            if (recurComparaDatos(numeroComparar, datos, 0, rangoError, 1, (int)(datos.length*PORC_ACEPTACION))) {
+            if (recurComparaDatos(numeroComparar, datos, 0, rangoError, 1, (int) (datos.length * PORC_ACEPTACION))) {
                 media.add(datos[numeroComparar]);
             }
         }
@@ -117,7 +122,7 @@ public class ThreadClasificaSubeDato extends Thread {
      * @param rangoError El rango de error que puede tener para poder pasar.
      * @param datosCorrectos Número de datos correctos que han pasado.
      * @param minPas Número de datos correctos para poder pasar la prueba.
-     * @return 
+     * @return
      */
     boolean recurComparaDatos(int datoFijo, float datos[], int posArray, float rangoError, int datosCorrectos, int minPas) {
         if (posArray >= datos.length) {
@@ -134,7 +139,7 @@ public class ThreadClasificaSubeDato extends Thread {
             }
         }
     }
-    
+
     /**
      * @see Método pasar subir los datos revisado a la base de datos.
      */
@@ -161,6 +166,20 @@ public class ThreadClasificaSubeDato extends Thread {
 
         Date date = new Date();
 
+        CountDownLatch donemm3Lluv = new CountDownLatch(1);
+        FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date)).updateChildren(datos, new DatabaseReference.CompletionListener() {
+            @Override
+            public void onComplete(DatabaseError de, DatabaseReference dr) {
+                donemm3Lluv.countDown();
+            }
+        });
+        try {
+            donemm3Lluv.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        /*
         for (Map.Entry<String, Object> entry : datos.entrySet()) {
 
             CountDownLatch donemm3Lluv = new CountDownLatch(1);
@@ -179,14 +198,14 @@ public class ThreadClasificaSubeDato extends Thread {
                 Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-        }
-
+        }*/
     }
-/**
- * @see Método para recortar los float a XX.XX
- * @param number Valor en string del float a recortar.
- * @return El valor en un formato más pequeño.
- */
+
+    /**
+     * @see Método para recortar los float a XX.XX
+     * @param number Valor en string del float a recortar.
+     * @return El valor en un formato más pequeño.
+     */
     private String onlyTwoDecimalPlaces(String number) {
         StringBuilder sbFloat = new StringBuilder(number);
         int start = sbFloat.indexOf(".");

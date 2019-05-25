@@ -68,10 +68,10 @@ public class ProyectoArduino {
         ThreadControladorTerminal controladorTerminal = new ThreadControladorTerminal("HILO_TERMINAL", nConfigServidor);
         //controladorTerminal.start();
         try {
-            File archivo = new File(getClass().getResource("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json").getFile());
-            //serviceAccount = new FileInputStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            //File archivo = new File(getClass().getResource("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json").getFile());
+            serviceAccount = new FileInputStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
             //serviceAccount = (FileInputStream) ProyectoArduino.class.getResourceAsStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
-            serviceAccount = new FileInputStream(archivo);
+            //serviceAccount = new FileInputStream(archivo);
             options = new FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .setDatabaseUrl("https://termomovidas.firebaseio.com/")

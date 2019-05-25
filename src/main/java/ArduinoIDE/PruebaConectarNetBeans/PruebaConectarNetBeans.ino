@@ -47,8 +47,8 @@ long tiempoAntes;
     bme.begin(0x76);
     dht.begin();
     
-    pinMode(pinAnemometro, INPUT_PULLUP);//INPUT);
-//    pinMode(pinPluvimetro, INPUT_PULLUP);//INPUT);
+    pinMode(pinAnemometro, INPUT_PULLUP);
+//    pinMode(pinPluvimetro, INPUT_PULLUP);
     pinMode(pinLed, OUTPUT);//INPUT);
 //    pinMode(pinLedPolvo, OUTPUT);//INPUT);
     
@@ -163,6 +163,7 @@ long tiempoAntes;
         avisoLed(50,3);
         h = -100;
         t = -100;
+        hif = -100;
     }else{
         Serial.println();
         Serial.println("DHT22");
@@ -205,14 +206,11 @@ long tiempoAntes;
   void interrupcionViento(){
     //NOTA_PROFE -> Mira el tiempo que tarda en dar la vuelta
     Serial.println("Sensor Magnetico");
-
-    velocidad = (millis()-tiempoAntes);
-    tiempoAntes = millis();
-    
+    velocidad = velocidad +1 ;
   }
 
   void interrupcionLluvia(){
-    
+    lluvia = lluvia +1;
   }
 
   void avisoLed(int tiempo, int parpadeo){
