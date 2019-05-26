@@ -18,7 +18,9 @@ const int port = 20003;
 
 ////Definir los pin de entrada y salida
 const int pinAnemometro = 0;
-//const int pinPluvimetro;
+const float dinAnemometro = 0.032;
+const int pinPluvimetro = 12;
+const float ml3H = 10;
 const int pinLed = 2;
 const int pinDHT = 14;
 //const int pintLedPolvo;
@@ -48,7 +50,7 @@ long tiempoAntes;
     dht.begin();
     
     pinMode(pinAnemometro, INPUT_PULLUP);
-//    pinMode(pinPluvimetro, INPUT_PULLUP);
+    pinMode(pinPluvimetro, INPUT_PULLUP);
     pinMode(pinLed, OUTPUT);//INPUT);
 //    pinMode(pinLedPolvo, OUTPUT);//INPUT);
     
@@ -68,7 +70,7 @@ long tiempoAntes;
     
     //listener del Anemometro
     attachInterrupt(digitalPinToInterrupt(pinAnemometro), interrupcionViento, RISING);
-    //attachInterrupt(digitalPinToInterrupt(pinPluvimetro), interrupcionLluvia, RISING);
+    attachInterrupt(digitalPinToInterrupt(pinPluvimetro), interrupcionLluvia, RISING);
   }
 
   void loop() {
@@ -81,6 +83,9 @@ long tiempoAntes;
           Serial.print("Velocidad ms/rad :"); Serial.println(velocidad);
           Serial.println("-  -  -  -  -  -  -  -  -  -  -  -");
           
+          velocidad = (2*3.1416*(dinAnemometro/2)*3.6)/((esperaTiempo/1000.0)/velocidad);
+          lluvia = (ml3H*lluvia*3.6)/(esperaTiempo/1000.0);
+
           client.println("0000");
           delay(5);
           enviarDatos();

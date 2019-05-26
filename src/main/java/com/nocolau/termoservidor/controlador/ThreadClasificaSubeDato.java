@@ -69,7 +69,7 @@ public class ThreadClasificaSubeDato extends Thread {
         _velViento = comparaDatos(paqueteDatos.getVelViento(), 10000.0f);
         _lluvia = comparaDatos(paqueteDatos.getLluvia(), 10000.0f);
         _polvo = comparaDatos(paqueteDatos.getPolvo(), 10000.0f);
-        _sensacion = comparaDatos(paqueteDatos.getSensacion(), 10000.0f);
+        _sensacion = comparaDatos(paqueteDatos.getSensacion(), 10.0f);
 
         System.out.println("-  -  -  -  -  -  -");
         System.out.println("INFO - CLASIFICAR DATOS");
@@ -79,7 +79,7 @@ public class ThreadClasificaSubeDato extends Thread {
         System.out.println("Temperatura DHT22  " + _tempDHT22 + "ºC");
         System.out.println("Humedad DHT22  " + _humedadDHT22 + "%");
         System.out.println("Velocidad del viento  " + _velViento + "ms/rad");
-        System.out.println("Lluvia  " + _lluvia + "mm/h");
+        System.out.println("Lluvia  " + _lluvia + "ml/h");
         System.out.println("Polvo  " + _polvo + "mg/m3");
         System.out.println("Sensación térmica  " + _sensacion + "ºC");
 
