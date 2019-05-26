@@ -43,8 +43,9 @@ public class ThreadClasificaSubeDato extends Thread {
 
     private FirebaseDatabase database;
     private DatabaseReference ref;
-    private DateFormat dateFormat;
-    private DateFormat horaFormat;
+    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private DateFormat horaFormat = new SimpleDateFormat("HH:mm");
+    Date date = new Date();
 
     ThreadClasificaSubeDato(String nombre, DatosPaquete nPaquete, float porcAceptacion) {
         super(nombre);
@@ -83,6 +84,9 @@ public class ThreadClasificaSubeDato extends Thread {
         System.out.println("Sensación térmica  " + _sensacion + "ºC");
 
         subirDatosFirebase();
+        if (horaFormat.format(date).equals("00:00")) {
+            //Subir tmb lo de lso transportes
+        }
     }
 
     /**
@@ -147,8 +151,6 @@ public class ThreadClasificaSubeDato extends Thread {
         database = FirebaseDatabase.getInstance();
 
         ref = database.getReference();
-        dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        horaFormat = new SimpleDateFormat("HH:mm");
 
         System.out.println("-  -  -  -  -  -  -");
         System.out.println("INFO - Subiendo Datos al servidor");
@@ -164,8 +166,6 @@ public class ThreadClasificaSubeDato extends Thread {
         datos.put("Polvo", onlyTwoDecimalPlaces(String.valueOf(_polvo)));
         datos.put("Sensacion", onlyTwoDecimalPlaces(String.valueOf(_sensacion)));
 
-        Date date = new Date();
-
         CountDownLatch donemm3Lluv = new CountDownLatch(1);
         FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date)).updateChildren(datos, new DatabaseReference.CompletionListener() {
             @Override
@@ -178,27 +178,36 @@ public class ThreadClasificaSubeDato extends Thread {
         } catch (InterruptedException ex) {
             Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
 
-        /*
-        for (Map.Entry<String, Object> entry : datos.entrySet()) {
+    private void crearTransportes() {
+        database = FirebaseDatabase.getInstance();
 
-            CountDownLatch donemm3Lluv = new CountDownLatch(1);
-            Map<String, Object> dato = new HashMap<>();
-            dato.put(entry.getKey(), entry.getValue());
+        ref = database.getReference();
 
-            FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date)).updateChildren(dato, new DatabaseReference.CompletionListener() {
-                @Override
-                public void onComplete(DatabaseError de, DatabaseReference dr) {
-                    donemm3Lluv.countDown();
-                }
-            });
-            try {
-                donemm3Lluv.await();
-            } catch (InterruptedException ex) {
-                Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+        System.out.println("-  -  -  -  -  -  -");
+        System.out.println("INFO - Subiendo Trasnportes al servidor");
+
+        HashMap<String, Object> datos = new HashMap<>();
+        datos.put("Coche", String.valueOf(0));
+        datos.put("Bici", String.valueOf(0));
+        datos.put("Apie", String.valueOf(0));
+        datos.put("Tpublico", String.valueOf(0));
+
+        CountDownLatch donemm3Lluv = new CountDownLatch(1);
+
+        FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date) + "/Transporte").updateChildren(datos, new DatabaseReference.CompletionListener() {
+            @Override
+            public void onComplete(DatabaseError de, DatabaseReference dr) {
+                donemm3Lluv.countDown();
             }
+        });
+        try {
+            donemm3Lluv.await();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
-        }*/
     }
 
     /**
