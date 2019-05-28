@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
@@ -38,7 +39,7 @@ public class ProyectoArduino {
     private int TIEMPO_DIV_VARIABLE;
     private float PORC_ACEPTACION;
 
-    private FileInputStream serviceAccount;
+    private InputStream serviceAccount;
     private FirebaseOptions options;
 
     private final Date diaInicio = new Date();
@@ -67,11 +68,15 @@ public class ProyectoArduino {
         //Crear Salida por terminal
         ThreadControladorTerminal controladorTerminal = new ThreadControladorTerminal("HILO_TERMINAL", nConfigServidor);
         //controladorTerminal.start();
+        System.err.println(".");
         try {
             //File archivo = new File(getClass().getResource("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json").getFile());
-            serviceAccount = new FileInputStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
-            //serviceAccount = (FileInputStream) ProyectoArduino.class.getResourceAsStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
-            //serviceAccount = new FileInputStream(archivo);
+            //serviceAccount = new FileInputStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            serviceAccount = getClass().getResourceAsStream("/termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            System.out.println(serviceAccount.read());
+            serviceAccount = getClass().getResourceAsStream("/termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            
+            //System.setProperty(key, value);
             options = new FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .setDatabaseUrl("https://termomovidas.firebaseio.com/")
@@ -83,6 +88,7 @@ public class ProyectoArduino {
             Logger.getLogger(ProyectoArduino.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+        System.err.println(".");
         //SERVIDOR
         try {
             ServerSocket ssk = new ServerSocket(puerto);

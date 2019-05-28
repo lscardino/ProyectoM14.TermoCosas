@@ -25,7 +25,7 @@ public class Controlador {
      * @throws IOException 
      */
     public static void main(String[] args) {
-        long minutos = 30;
+        long minutos = 3;
         int div = 3;
         ConfiguracionServidor nConfig = new ConfiguracionServidor(minutos * 60000, div);
         try {

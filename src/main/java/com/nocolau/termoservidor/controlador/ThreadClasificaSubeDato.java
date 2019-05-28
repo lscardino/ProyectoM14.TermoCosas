@@ -167,7 +167,7 @@ public class ThreadClasificaSubeDato extends Thread {
         datos.put("Sensacion", onlyTwoDecimalPlaces(String.valueOf(_sensacion)));
 
         CountDownLatch donemm3Lluv = new CountDownLatch(1);
-        FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date)).updateChildren(datos, new DatabaseReference.CompletionListener() {
+        FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/Hora/" + horaFormat.format(date)).updateChildren(datos, new DatabaseReference.CompletionListener() {
             @Override
             public void onComplete(DatabaseError de, DatabaseReference dr) {
                 donemm3Lluv.countDown();
