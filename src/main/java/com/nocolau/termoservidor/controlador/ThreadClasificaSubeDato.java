@@ -16,7 +16,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +27,7 @@ import java.util.logging.Logger;
  */
 public class ThreadClasificaSubeDato extends Thread {
 
-    private float PORC_ACEPTACION;
+    private final float PORC_ACEPTACION;
 
     private float _temp;
     private float _humedad;
@@ -39,12 +38,12 @@ public class ThreadClasificaSubeDato extends Thread {
     private float _lluvia;
     private float _polvo;
     private float _sensacion;
-    private DatosPaquete paqueteDatos;
+    private final DatosPaquete paqueteDatos;
 
     private FirebaseDatabase database;
     private DatabaseReference ref;
-    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    private DateFormat horaFormat = new SimpleDateFormat("HH:mm");
+    private final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private final DateFormat horaFormat = new SimpleDateFormat("HH:mm");
     Date date = new Date();
 
     ThreadClasificaSubeDato(String nombre, DatosPaquete nPaquete, float porcAceptacion) {
@@ -166,7 +165,7 @@ public class ThreadClasificaSubeDato extends Thread {
         datos.put("Polvo", onlyTwoDecimalPlaces(String.valueOf(_polvo)));
         datos.put("Sensacion", onlyTwoDecimalPlaces(String.valueOf(_sensacion)));
 
-        CountDownLatch donemm3Lluv = new CountDownLatch(1);
+        final CountDownLatch donemm3Lluv = new CountDownLatch(1);
         FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/Hora/" + horaFormat.format(date)).updateChildren(datos, new DatabaseReference.CompletionListener() {
             @Override
             public void onComplete(DatabaseError de, DatabaseReference dr) {
@@ -194,7 +193,7 @@ public class ThreadClasificaSubeDato extends Thread {
         datos.put("Apie", String.valueOf(0));
         datos.put("Tpublico", String.valueOf(0));
 
-        CountDownLatch donemm3Lluv = new CountDownLatch(1);
+        final CountDownLatch donemm3Lluv = new CountDownLatch(1);
 
         FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/" + horaFormat.format(date) + "/Transporte").updateChildren(datos, new DatabaseReference.CompletionListener() {
             @Override

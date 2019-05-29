@@ -20,13 +20,14 @@ public class Controlador {
      * @param args
      * Variables a pasar para configurar;
      * -Puerto
-     * -Tiempo a Esperar, Muestra a Dividir
+     * -Tiempo a Esperar en minutos, tiempo en cada muestra
      * -Puerto, Tiempo a Esperar, Muestra a Dividir
      * @throws IOException 
      */
     public static void main(String[] args) {
         long minutos = 3;
         int div = 3;
+        int tiempoXMuestra;
         ConfiguracionServidor nConfig = new ConfiguracionServidor(minutos * 60000, div);
         try {
             switch (args.length) {
@@ -34,13 +35,15 @@ public class Controlador {
                     nConfig.setPuerto(Integer.parseInt(args[0]));
                     break;
                 case 2:
-                    nConfig.setTIEMPO_BUCLE(Long.parseLong(args[0]));
-                    nConfig.setTIEMPO_DIV_VARIABLE(Integer.parseInt(args[1]));
+                    tiempoXMuestra = (int)(Long.parseLong(args[0]) / Integer.parseInt(args[1]));
+                    nConfig.setTIEMPO_BUCLE(Long.parseLong(args[0])* 60000);
+                    nConfig.setTIEMPO_DIV_VARIABLE(tiempoXMuestra);
                     break;
                 case 3:
+                    tiempoXMuestra = (int)(Long.parseLong(args[1]) / Integer.parseInt(args[2]));
                     nConfig.setPuerto(Integer.parseInt(args[0]));
-                    nConfig.setTIEMPO_BUCLE(Long.parseLong(args[1]));
-                    nConfig.setTIEMPO_DIV_VARIABLE(Integer.parseInt(args[2]));
+                    nConfig.setTIEMPO_BUCLE(Long.parseLong(args[1])* 60000);
+                    nConfig.setTIEMPO_DIV_VARIABLE(tiempoXMuestra);
                     break;
                 default:
                     throw new NumberFormatException();
