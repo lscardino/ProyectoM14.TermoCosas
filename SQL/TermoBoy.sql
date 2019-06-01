@@ -35,7 +35,8 @@ ALTER TABLE Usuario ADD CONSTRAINT pk_usuario PRIMARY KEY (fk_codigo);
 		sensacionT FLOAT,
 		polvo FLOAT,
 		mm3Lluvia FLOAT,
-		kmHViento FLOAT
+		kmHViento FLOAT,
+		lumens FLOAT
 	);
 	ALTER TABLE Datos ADD CONSTRAINT pk_datos PRIMARY KEY (fk_hora, fk_dia);
 	ALTER TABLE Datos ADD FOREIGN KEY (fk_dia) REFERENCES dia(fk_dia) ON DELETE CASCADE;
@@ -61,8 +62,8 @@ insert into dia values("2019-05-28");
 insert into dia values("2019-05-29");
 insert into dia values("2019-05-30");
 insert into Usuario values("Xin",20,"H");
-insert into Datos values("2019-05-28","20:00", 0,0,0,0,0,0,0);
-insert into Datos values("2019-05-28","21:00", 0,0,0,0,0,0,0);
+insert into Datos values("2019-05-28","20:00", 0,0,0,0,0,0,0,0);
+insert into Datos values("2019-05-28","21:00", 0,0,0,0,0,0,0,0);
 insert into Usar Values("Xin","Apie","2019-05-28");
 insert into Usar Values("Xin","Coche","2019-05-29");
 

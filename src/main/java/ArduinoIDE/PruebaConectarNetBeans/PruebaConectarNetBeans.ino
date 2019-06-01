@@ -37,11 +37,12 @@ float t,h,hif;
 float velocidad = 0;
 float lluvia = 0;
 float polvo = 0;
+float lumins = 0;
 
 //Tiempo que espera para poder ver los datos
-long esperaTiempo = 20000;
-long tiempoEsperar = 0;
-long tiempoAntes;
+unsigned long esperaTiempo = 20000;
+unsigned long tiempoEsperar = 0;
+unsigned long tiempoAntes;
   void setup() {
     Serial.begin(115200);
     delay(10);
@@ -248,6 +249,7 @@ long tiempoAntes;
     client.println(lluvia);
     client.println(polvo);
     client.println(hif);
+    client.println(lumins);
     /*
      //DataInputStream
     client.print(1);

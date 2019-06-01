@@ -38,6 +38,7 @@ public class ThreadClasificaSubeDato extends Thread {
     private float _lluvia;
     private float _polvo;
     private float _sensacion;
+    private float _lumins;
     private final DatosPaquete paqueteDatos;
 
     private FirebaseDatabase database;
@@ -69,6 +70,7 @@ public class ThreadClasificaSubeDato extends Thread {
         _lluvia = comparaDatos(paqueteDatos.getLluvia(), 10000.0f);
         _polvo = comparaDatos(paqueteDatos.getPolvo(), 10000.0f);
         _sensacion = comparaDatos(paqueteDatos.getSensacion(), 10.0f);
+        _lumins = comparaDatos(paqueteDatos.getLumins(), 2000.0f);
 
         System.out.println("-  -  -  -  -  -  -");
         System.out.println("INFO - CLASIFICAR DATOS");
@@ -81,6 +83,7 @@ public class ThreadClasificaSubeDato extends Thread {
         System.out.println("Lluvia  " + _lluvia + "ml/h");
         System.out.println("Polvo  " + _polvo + "mg/m3");
         System.out.println("Sensación térmica  " + _sensacion + "ºC");
+        System.out.println("Luz  " + _lumins + "Lux");
 
         subirDatosFirebase();
         if (horaFormat.format(date).equals("00:00")) {
@@ -156,14 +159,15 @@ public class ThreadClasificaSubeDato extends Thread {
 
         HashMap<String, Object> datos = new HashMap<>();
         datos.put("Temperatura", onlyTwoDecimalPlaces(String.valueOf(_temp)));
-        datos.put("Temperatura DHT22", onlyTwoDecimalPlaces(String.valueOf(_tempDHT22)));
+        //datos.put("Temperatura DHT22", onlyTwoDecimalPlaces(String.valueOf(_tempDHT22)));
         datos.put("Humedad", onlyTwoDecimalPlaces(String.valueOf(_humedad)));
-        datos.put("Humedad DHT22", onlyTwoDecimalPlaces(String.valueOf(_humedadDHT22)));
+        //datos.put("Humedad DHT22", onlyTwoDecimalPlaces(String.valueOf(_humedadDHT22)));
         datos.put("Presión", onlyTwoDecimalPlaces(String.valueOf(_presion)));
         datos.put("Velocidad viento", onlyTwoDecimalPlaces(String.valueOf(_velViento)));
         datos.put("Lluvia", onlyTwoDecimalPlaces(String.valueOf(_lluvia)));
         datos.put("Polvo", onlyTwoDecimalPlaces(String.valueOf(_polvo)));
         datos.put("Sensacion", onlyTwoDecimalPlaces(String.valueOf(_sensacion)));
+        datos.put("Lumens", onlyTwoDecimalPlaces(String.valueOf(_lumins)));
 
         final CountDownLatch donemm3Lluv = new CountDownLatch(1);
         FirebaseDatabase.getInstance().getReference("Dia").child(dateFormat.format(date) + "/Hora/" + horaFormat.format(date)).updateChildren(datos, new DatabaseReference.CompletionListener() {
