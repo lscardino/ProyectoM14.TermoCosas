@@ -8,12 +8,14 @@
 #define DHTTYPE DHT22
 
 ////Internet
-const char* ssid = "Proyecto_TermoBoy";
-const char* contra = "55555555";
+//const char* ssid = "Proyecto_TermoBoy";
+//const char* contra = "55555555";
+const char* ssid = "MiFibra-58CD";
+const char* contra = "itdMY4Xj";
 
 ////Servicio
-#define host "192.168.137.1"
-//#define host "192.168.1.88"
+//#define host "192.168.137.1"
+#define host "192.168.1.67"
 const int port = 20003;
 
 ////Definir los pin de entrada y salida

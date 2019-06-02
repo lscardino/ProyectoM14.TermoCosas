@@ -252,8 +252,17 @@ public class ProyectoArduino {
                 paqueteDatos.introducirdatos(enumDato, Float.parseFloat(in.readLine()), posNumDatos);
             }
 
+            if(posNumDatos < 1){
             System.out.println("-  -  -  -  -  -  -");
-            System.out.println("INFO - datos recibidos (" + (posNumDatos + 1) + "/" + TIEMPO_DIV_VARIABLE + ")");/*
+                System.out.print("INFO - datos a recibir |");
+                for (int i = 0; i <= TIEMPO_DIV_VARIABLE; i++) {
+                    System.out.print("-");
+                }
+                System.out.println("| Limit(" + TIEMPO_DIV_VARIABLE + ")  Tiempo " + TIEMPO_BUCLE/60000 + "min");
+                System.out.print("INFO - datos recibidos |-");
+            }
+            System.out.print("-");
+            /*
             System.out.println("Temperatura  " + temp[posNumDatos] + "ºC");
             System.out.println("Humedad  " + humedad[posNumDatos] + "%");
             System.out.println("Presión  " + presion[posNumDatos] + "Pa");
@@ -262,6 +271,7 @@ public class ProyectoArduino {
             System.out.println("Velocidad del viento  " + velViento[posNumDatos] + "ms/rad");*/
             posNumDatos++;
             if (posNumDatos >= TIEMPO_DIV_VARIABLE) {
+                System.out.println("| ->");
                 posNumDatos = 0;
                 ThreadClasificaSubeDato clasifica = new ThreadClasificaSubeDato("HILO_CLASIFICAR_SUBE_DATOS", paqueteDatos, PORC_ACEPTACION);
                 clasifica.start();

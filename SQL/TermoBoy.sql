@@ -39,7 +39,7 @@ ALTER TABLE Usuario ADD CONSTRAINT pk_usuario PRIMARY KEY (fk_codigo);
 		lumens FLOAT
 	);
 	ALTER TABLE Datos ADD CONSTRAINT pk_datos PRIMARY KEY (fk_hora, fk_dia);
-	ALTER TABLE Datos ADD FOREIGN KEY (fk_dia) REFERENCES dia(fk_dia) ON DELETE CASCADE;
+	ALTER TABLE Datos ADD FOREIGN KEY (fk_dia) REFERENCES Dia(fk_dia) ON DELETE CASCADE;
 
 	DROP TABLE IF EXISTS Usar;
 	CREATE TABLE Usar(
@@ -47,10 +47,10 @@ ALTER TABLE Usuario ADD CONSTRAINT pk_usuario PRIMARY KEY (fk_codigo);
 	fk_transporte CHAR(30),
 	fk_dia DATE
 	);
-	ALTER TABLE usar ADD CONSTRAINT pk_usar PRIMARY KEY (fk_dia, fk_usuario);
-	ALTER TABLE usar ADD FOREIGN KEY (fk_usuario) REFERENCES usuario(fk_codigo) ON DELETE CASCADE;
-	ALTER TABLE usar ADD FOREIGN KEY (fk_transporte) REFERENCES Transporte(fk_como) ON DELETE CASCADE;
-	ALTER TABLE usar ADD FOREIGN KEY (fk_dia) REFERENCES dia(fk_dia) ON DELETE CASCADE;
+	ALTER TABLE Usar ADD CONSTRAINT pk_usar PRIMARY KEY (fk_dia, fk_usuario);
+	ALTER TABLE Usar ADD FOREIGN KEY (fk_usuario) REFERENCES Usuario(fk_codigo) ON DELETE CASCADE;
+	ALTER TABLE Usar ADD FOREIGN KEY (fk_transporte) REFERENCES Transporte(fk_como) ON DELETE CASCADE;
+	ALTER TABLE Usar ADD FOREIGN KEY (fk_dia) REFERENCES Dia(fk_dia) ON DELETE CASCADE;
 
 /*
     ON DELETE CASCADE
@@ -67,5 +67,46 @@ insert into Datos values("2019-05-28","21:00", 0,0,0,0,0,0,0,0);
 insert into Usar Values("Xin","Apie","2019-05-28");
 insert into Usar Values("Xin","Coche","2019-05-29");
 
-
 select * from Usar ;
+select * from Usuario;
+
+
+#Buscar cuantas mujeres, hombres y otros.
+select 
+	(select count(usu.fk_codigo) from Usuario usu where usu.genero = 'Mujer'),
+	(select count(usu.fk_codigo) from Usuario usu where usu.genero = 'Hombre'),
+	(select count(usu.fk_codigo) from Usuario usu where usu.genero = 'Otro'),
+	(select count(usu.fk_codigo) from Usuario usu where usu.genero is null)
+;
+
+#Buscar los transportes del general DATOS
+select usa.fk_transporte ,count(usa.fk_transporte) from Usar usa group by usa.fk_transporte;
+
+
+#Sequencia de busqueda por dia de GENERO
+select 
+	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
+	select usar.fk_usuario from Usar usar where usar.fk_dia in ("2019-05-28","2019-05-31"))
+	AND usu.genero = 'Mujer'),
+
+	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
+	select usar.fk_usuario from usar where usar.fk_dia in ("2019-05-28","2019-05-31"))
+	AND usu.genero = 'Hombre'),
+    
+	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
+	select usar.fk_usuario from Usar usar  where usar.fk_dia in ("2019-05-28","2019-05-31"))
+	AND usu.genero = 'Otro'),
+    
+	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
+	select usar.fk_usuario from Usar usar where usar.fk_dia in ("2019-05-28","2019-05-31"))
+	AND usu.genero is null)
+;
+
+#Algo mas simple y relaciona tabla GENERO
+	(select count(usu.fk_codigo) from Usuario usu , Usar usar where usu.fk_codigo = usar.fk_usuario AND usar.fk_dia in ("2019-05-28","2019-05-31")
+	AND usu.genero is null);
+
+
+#Selencia por dia de movimiento DATOS
+
+select usar.fk_transporte, count(usar.fk_transporte) from Usar usar where usar.fk_dia in ("2019-05-28","2019-05-31") group by usar.fk_transporte;

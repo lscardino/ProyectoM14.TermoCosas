@@ -72,8 +72,8 @@ public class ThreadClasificaSubeDato extends Thread {
         _sensacion = comparaDatos(paqueteDatos.getSensacion(), 10.0f);
         _lumins = comparaDatos(paqueteDatos.getLumins(), 2000.0f);
 
-        System.out.println("-  -  -  -  -  -  -");
-        System.out.println("INFO - CLASIFICAR DATOS");
+        System.out.println("\n-  -  -  -  -  -  -");
+        System.out.println("INFO - CLASIFICAR DATOS  - Dia " + date);
         System.out.println("Temperatura  " + _temp + "ºC");
         System.out.println("Humedad  " + _humedad + "%");
         System.out.println("Presión  " + _presion + "Pa");
