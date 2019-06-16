@@ -1,8 +1,15 @@
 DROP DATABASE IF EXISTS TermoMoBoy;
 CREATE DATABASE TermoMoBoy;
+
 DROP USER IF EXISTS TermoAdmin;
 CREATE USER TermoAdmin IDENTIFIED BY 'TermoAdmin';
 GRANT ALL PRIVILEGES ON TermoMoBoy.* TO TermoAdmin WITH GRANT OPTION;
+
+DROP USER IF EXISTS TermoGraf;
+CREATE USER TermoGraf IDENTIFIED BY 'GrafPass';
+GRANT SELECT ON TermoMoBoy.* TO 'TermoGraf'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
 USE TermoMoBoy;
 
 DROP TABLE IF EXISTS Transporte;
@@ -58,9 +65,9 @@ ALTER TABLE Usuario ADD CONSTRAINT pk_usuario PRIMARY KEY (fk_codigo);
 */
 insert into Transporte values("Apie");
 insert into Transporte values("Coche");
-insert into dia values("2019-05-28");
-insert into dia values("2019-05-29");
-insert into dia values("2019-05-30");
+insert into Dia values("2019-05-28");
+insert into Dia values("2019-05-29");
+insert into Dia values("2019-05-30");
 insert into Usuario values("Xin",20,"H");
 insert into Datos values("2019-05-28","20:00", 0,0,0,0,0,0,0,0);
 insert into Datos values("2019-05-28","21:00", 0,0,0,0,0,0,0,0);
@@ -70,43 +77,64 @@ insert into Usar Values("Xin","Coche","2019-05-29");
 select * from Usar ;
 select * from Usuario;
 
-
 #Buscar cuantas mujeres, hombres y otros.
 select 
-	(select count(usu.fk_codigo) from Usuario usu where usu.genero = 'Mujer'),
-	(select count(usu.fk_codigo) from Usuario usu where usu.genero = 'Hombre'),
-	(select count(usu.fk_codigo) from Usuario usu where usu.genero = 'Otro'),
-	(select count(usu.fk_codigo) from Usuario usu where usu.genero is null)
+	(select count(usu.fk_codigo) from Usuario usu where usu.genero = 'Mujer') as 'Mujeres',
+	(select count(usu.fk_codigo) from Usuario usu where usu.genero = 'Hombre') as 'Hombres',
+	(select count(usu.fk_codigo) from Usuario usu where usu.genero = 'Otro') as 'Otros',
+	(select count(usu.fk_codigo) from Usuario usu where usu.genero is null) as 'Anónimos'
 ;
 
 #Buscar los transportes del general DATOS
-select usa.fk_transporte ,count(usa.fk_transporte) from Usar usa group by usa.fk_transporte;
 
 
 #Sequencia de busqueda por dia de GENERO
 select 
 	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
-	select usar.fk_usuario from Usar usar where usar.fk_dia in ("2019-05-28","2019-05-31"))
-	AND usu.genero = 'Mujer'),
+	select usar.fk_usuario from Usar usar where usar.fk_dia >= "2019-05-28" AND usar.fk_dia <= "2019-05-31" )
+	AND usu.genero = 'Mujer') as 'Mujeres' ,
 
 	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
-	select usar.fk_usuario from usar where usar.fk_dia in ("2019-05-28","2019-05-31"))
-	AND usu.genero = 'Hombre'),
+	select usar.fk_usuario from usar where usar.fk_dia >= "2019-05-28" AND usar.fk_dia <= "2019-05-31" )
+	AND usu.genero = 'Hombre') as 'Hombres',
     
 	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
-	select usar.fk_usuario from Usar usar  where usar.fk_dia in ("2019-05-28","2019-05-31"))
-	AND usu.genero = 'Otro'),
+	select usar.fk_usuario from Usar usar  where  usar.fk_dia >= "2019-05-28" AND usar.fk_dia <= "2019-05-31" )
+	AND usu.genero = 'Otro') as 'Otros',
     
 	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
-	select usar.fk_usuario from Usar usar where usar.fk_dia in ("2019-05-28","2019-05-31"))
-	AND usu.genero is null)
+	select usar.fk_usuario from Usar usar where  usar.fk_dia >= "2019-05-28" AND usar.fk_dia <= "2019-05-31" )
+	AND usu.genero is null) as 'Anónimos'
 ;
 
 #Algo mas simple y relaciona tabla GENERO
-	(select count(usu.fk_codigo) from Usuario usu , Usar usar where usu.fk_codigo = usar.fk_usuario AND usar.fk_dia in ("2019-05-28","2019-05-31")
+	(select count(usu.fk_codigo) from Usuario usu , Usar usar where usu.fk_codigo = usar.fk_usuario AND usar.fk_dia >= "2019-05-28" AND usar.fk_dia <= "2019-05-31" 
 	AND usu.genero is null);
+/**/
+select 
+	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
+	select usar.fk_usuario from Usar usar where usar.fk_dia >= "2019-05-28" AND usar.fk_dia <= "2019-05-31" )
+	AND usu.genero = 'Mujer') as 'Mujeres' ,
+
+	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
+	select usar.fk_usuario from usar where usar.fk_dia >= "2019-05-28" AND usar.fk_dia <= "2019-05-31" )
+	AND usu.genero = 'Hombre') as 'Hombres',
+    
+	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
+	select usar.fk_usuario from Usar usar  where  usar.fk_dia >= "2019-05-28" AND usar.fk_dia <= "2019-05-31" )
+	AND usu.genero = 'Otro') as 'Otros',
+    
+	(select count(usu.fk_codigo) from Usuario usu where usu.fk_codigo in (
+	select usar.fk_usuario from Usar usar where  usar.fk_dia >= "2019-05-28" AND usar.fk_dia <= "2019-05-31" )
+	AND usu.genero is null) as 'Anónimos'
+    
+;
 
 
 #Selencia por dia de movimiento DATOS
 
-select usar.fk_transporte, count(usar.fk_transporte) from Usar usar where usar.fk_dia in ("2019-05-28","2019-05-31") group by usar.fk_transporte;
+select usar.fk_transporte, count(usar.fk_transporte) from Usar usar where usar.fk_dia >= "2019-05-28" AND usar.fk_dia <= "2019-05-31" group by usar.fk_transporte;
+
+
+select * from Dia where Dia.fk_dia order by Dia.fk_dia;
+select * from Usuario  ;

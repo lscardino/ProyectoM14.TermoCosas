@@ -2,17 +2,25 @@
 #include <ESP8266WiFi.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
+#include <BH1750FVI.h>
 #include "DHT.h"
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 #define DHTTYPE DHT22
+#define SEALEVELPRESSURE_HPA (1013.25)
 
 ////Internet
-const char* ssid = "Proyecto_TermoBoy";
-const char* contra = "55555555";
+const char* ssid = "Aula_212";
+const char* contra = "6n8okeCdGHCkJS";
+//const char* ssid = "MiFibra-58CD";
+//const char* contra = "itdMY4Xj";
+
+////Conf Sesnsor Luz
+BH1750FVI LightSensor(BH1750FVI::k_DevModeContLowRes);
 
 ////Servicio
-#define host "192.168.1.67"
+#define host "192.168.12.180"
+//#define host "192.168.1.67"
 const int port = 20003;
 
 ////Definir los pin de entrada y salida
@@ -24,6 +32,16 @@ const int pinLed = 2;
 const int pinDHT = 14;
 //const int pintLedPolvo;
 const int pinPolvo = 0;
+const int pinLedPolvo = 15;
+
+//declaraciones movidas tiempo
+unsigned int tiempoMuestra = 280;
+unsigned int deltaTime = 40;
+unsigned int sleepTime = 9680;
+
+float voltageMedido = 0;
+float calcVoltage = 0;
+float DensidadPolvo = 0;
 
 ////Declaracion de objetos
 Adafruit_BME280 bme;
@@ -36,22 +54,27 @@ float t,h,hif;
 float velocidad = 0;
 float lluvia = 0;
 float polvo = 0;
-float lumins = 0;
+
+float lux = 0;
+
 
 //Tiempo que espera para poder ver los datos
-unsigned long esperaTiempo = 20000;
-unsigned long tiempoEsperar = 0;
-unsigned long tiempoAntes;
+long esperaTiempo = 2000;
+long tiempoEsperar = 0;
+long tiempoAntes;
+
   void setup() {
     Serial.begin(115200);
     delay(10);
     
     bme.begin(0x76);
+    LightSensor.begin(); 
     dht.begin();
     
     pinMode(pinAnemometro, INPUT_PULLUP);
     pinMode(pinPluvimetro, INPUT_PULLUP);
     pinMode(pinLed, OUTPUT);//INPUT);
+    pinMode(pinLedPolvo, OUTPUT);//INPUT);
 //    pinMode(pinLedPolvo, OUTPUT);//INPUT);
     
     //Configurar WiFi
@@ -74,28 +97,31 @@ unsigned long tiempoAntes;
   }
 
   void loop() {
-    if(client.connected()){
+   if(client.connected()){
+   
         if(millis() > tiempoEsperar){
           miraTemBME280();
           miraTemDHT();
           //miraPolvo();
-          Serial.println();
-          Serial.print("Velocidad ms/rad :"); Serial.println(velocidad);
-          Serial.println("-  -  -  -  -  -  -  -  -  -  -  -");
+          calcularPolvo();
+          calcularLuminosidad();
           
           velocidad = (2*3.1416*(dinAnemometro/2)*3.6)/((esperaTiempo/1000.0)/velocidad);
+          velocidad = velocidad * 100;
           lluvia = (ml3H*lluvia*3.6)/(esperaTiempo/1000.0);
 
+          Serial.println();
+          Serial.print("Velocidad km/h :"); Serial.println(velocidad);
+          Serial.println("-  -  -  -  -  -  -  -  -  -  -  -");
+          
           client.println("0000");
           delay(5);
-          enviarDatos();
+         enviarDatos();
+          
           tiempoEsperar = esperaTiempo + millis();
           reiniciarVariables();
         }
-        /*else{
-          delay(100);
-          numEspera += 100;
-        }*/
+
     }else{
       Serial.println("ERROR - Servidor caido!");
       client.stop();
@@ -103,7 +129,8 @@ unsigned long tiempoAntes;
       //Conectar con el servido
       conectarServidor();
     }
-    if(WiFi.status()!= WL_CONNECTED){
+   if(WiFi.status()!= WL_CONNECTED){
+     if(2<1){
       Serial.println("ERROR - Fallo WiFi");
       delay(5555);
       conectarWiFi();
@@ -111,6 +138,9 @@ unsigned long tiempoAntes;
     
     delay(5);
   }
+  }
+  
+  
 
   void conectarWiFi(){
     long tiempoReintentar = millis() + 30000;
@@ -197,7 +227,15 @@ unsigned long tiempoAntes;
       Serial.print("Presión :"); Serial.println(presion);
       Serial.print("Altitud :"); Serial.println(altitud);
     }
-    
+  }
+
+  void calcularLuminosidad(){
+    lux = LightSensor.GetLightIntensity();
+    Serial.print("Cantidad de luz : ");
+    Serial.print(lux);
+    Serial.println(" lux");
+    miraTemBME280();
+    delay(250);   
   }
 
   void miraPolvo(){
@@ -245,10 +283,15 @@ unsigned long tiempoAntes;
     client.println(t);
     client.println(h);
     client.println(velocidad);
+    //client.println(10.0);
     client.println(lluvia);
-    client.println(polvo);
+    //client.println(20.0);
+    client.println(DensidadPolvo);
     client.println(hif);
-    client.println(lumins);
+
+    client.println(lux);
+
+    
     /*
      //DataInputStream
     client.print(1);
@@ -259,4 +302,35 @@ unsigned long tiempoAntes;
     client.write(12);
     client.write("1");*/
     digitalWrite(pinLed, HIGH);
+  }
+
+  void calcularPolvo(){
+    digitalWrite(pinLedPolvo,LOW);
+    delayMicroseconds(tiempoMuestra);
+
+  voltageMedido = analogRead(pinPolvo);
+
+  delayMicroseconds(deltaTime);
+  digitalWrite(pinLedPolvo,HIGH);
+  delayMicroseconds(sleepTime);
+
+  //calcVoltage = voMeasured*(5.0/1024);
+  calcVoltage = voltageMedido*(3.3/1024);
+  DensidadPolvo = 0.17*calcVoltage-0.1;
+
+  if ( DensidadPolvo < 0)
+  {
+    DensidadPolvo = 0.00;
+  }
+
+  Serial.println("Valor de la Señal(0-1023):");
+  Serial.println(voltageMedido);
+
+  Serial.println("Voltage:");
+  Serial.println(calcVoltage);
+
+  Serial.println("Densidad del Polvo:");
+  Serial.println(DensidadPolvo);
+
+  //delay(1000);
   }
