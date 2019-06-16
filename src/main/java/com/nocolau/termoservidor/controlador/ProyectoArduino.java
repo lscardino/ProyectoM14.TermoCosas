@@ -70,11 +70,12 @@ public class ProyectoArduino {
         //controladorTerminal.start();
         System.err.println(".");
         try {
-            //File archivo = new File(getClass().getResource("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json").getFile());
-            //serviceAccount = new FileInputStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
-            serviceAccount = getClass().getResourceAsStream("/termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
-            System.out.println(serviceAccount.read());
-            serviceAccount = getClass().getResourceAsStream("/termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            File archivo = new File(("termomovidas-firebase-adminsdk-qgjn6-378a7de574.json"));
+           // serviceAccount = new FileInputStream("src" + File.separator + "main" + File.separator + "resources" + File.separator + "termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            //serviceAccount = getClass().getResourceAsStream("/termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
+            serviceAccount = new FileInputStream(archivo);
+           // System.out.println(serviceAccount.read());
+            //serviceAccount = getClass().getResourceAsStream("/termomovidas-firebase-adminsdk-qgjn6-378a7de574.json");
             
             //System.setProperty(key, value);
             options = new FirebaseOptions.Builder()
@@ -204,7 +205,10 @@ public class ProyectoArduino {
                 //Lee un caracter en formato byte
                 do {
                     try {
-                        switch (in.readLine()) {
+                        String a = in.readLine();
+                        System.out.println("VAlor " + a);
+                        
+                        switch (a) {
                             case "1111":
                                 out.write((TIEMPO_BUCLE / TIEMPO_DIV_VARIABLE) + "");
                                 out.flush();
